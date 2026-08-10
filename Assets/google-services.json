@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "732525371866",
+    "project_id": "mcdaily-eb518",
+    "storage_bucket": "mcdaily-eb518.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:732525371866:android:774b8a7c8c12c64c4220e3",
+        "android_client_info": {
+          "package_name": "com.Zeca.McDaily"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBnnyECBoy_nM3KGSQnNb_pRxoEboXNZJA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
