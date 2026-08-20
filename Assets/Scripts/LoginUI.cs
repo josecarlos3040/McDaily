@@ -1,5 +1,6 @@
 using TMPro;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class LoginUI : MonoBehaviour
@@ -22,6 +23,8 @@ public class LoginUI : MonoBehaviour
             emailInputLogin.text,
             passwordInputLogin.text
         );
+
+        SceneManager.LoadScene("Questionario");
     }
 
     public void Register()
@@ -30,6 +33,8 @@ public class LoginUI : MonoBehaviour
             emailInputRegister.text,
             passwordInputRegister.text
         );
+
+        
     }
 
     void Update()

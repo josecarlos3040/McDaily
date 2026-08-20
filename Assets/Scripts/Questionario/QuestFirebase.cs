@@ -1,4 +1,5 @@
 using Firebase.Auth;
+using Firebase.Extensions;
 using Firebase.Firestore;
 using System;
 using System.Collections.Generic;
@@ -50,7 +51,7 @@ public class QuestFirebase : MonoBehaviour
             .Collection("questionnaires")
             .Document(date)
             .SetAsync(data)
-            .ContinueWith(task =>
+            .ContinueWithOnMainThread(task =>
             {
                 if (task.IsCompletedSuccessfully)
                 {
@@ -97,7 +98,7 @@ public class QuestFirebase : MonoBehaviour
             .Collection("questionnaires")
             .Document(date)
             .GetSnapshotAsync()
-            .ContinueWith(task =>
+            .ContinueWithOnMainThread(task =>
             {
                 if (task.IsCompletedSuccessfully)
                 {
@@ -129,7 +130,7 @@ public class QuestFirebase : MonoBehaviour
         db.Collection("dailyQuestionnaires")
             .Document(date)
             .GetSnapshotAsync()
-            .ContinueWith(task =>
+            .ContinueWithOnMainThread(task =>
             {
                 if (!task.IsCompletedSuccessfully)
                 {
@@ -191,7 +192,7 @@ public class QuestFirebase : MonoBehaviour
         db.Collection("dailyQuestionnaires")
             .Document(date)
             .SetAsync(data)
-            .ContinueWith(task =>
+            .ContinueWithOnMainThread(task =>
             {
                 if (task.IsCompletedSuccessfully)
                 {
@@ -226,7 +227,7 @@ public class QuestFirebase : MonoBehaviour
               .Document(date);
 
         document.GetSnapshotAsync()
-            .ContinueWith(task =>
+            .ContinueWithOnMainThread(task =>
             {
                 if (!task.IsCompletedSuccessfully)
                 {
@@ -248,9 +249,12 @@ public class QuestFirebase : MonoBehaviour
                 if (snapshot.Exists)
                 {
                     List<string> existingQuestions =
-                        snapshot.GetValue<List<string>>(
-                            "questions"
-                        );
+                        snapshot.GetValue<List<string>>("questions");
+
+                    Debug.Log(
+                        "PERGUNTAS DO FIREBASE: " +
+                        string.Join(", ", existingQuestions)
+                    );
 
                     callback?.Invoke(existingQuestions);
 
@@ -311,7 +315,7 @@ public class QuestFirebase : MonoBehaviour
 
 
                 document.SetAsync(data)
-                    .ContinueWith(saveTask =>
+                    .ContinueWithOnMainThread(saveTask =>
                     {
                         if (saveTask.IsCompletedSuccessfully)
                         {

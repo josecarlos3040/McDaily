@@ -95,33 +95,29 @@ public class QuestManager : MonoBehaviour
     // CRIAR OS PREFABS
     // =========================================================
 
-    private void CreateQuestionPrefabs(
-        List<string> questionIds)
+    private void CreateQuestionPrefabs(List<string> questionIds)
     {
         ClearQuestions();
 
+        Debug.Log("Quantidade de IDs recebidos: " + questionIds.Count);
+
         foreach (string questionId in questionIds)
         {
-            QuestPrefabManager prefab =
-                FindQuestionPrefab(questionId);
+            Debug.Log("ID recebido: " + questionId);
+
+            QuestPrefabManager prefab = FindQuestionPrefab(questionId);
 
             if (prefab == null)
             {
-                Debug.LogError(
-                    "Prefab não encontrado para: " +
-                    questionId
-                );
-
+                Debug.LogError("Prefab não encontrado para: " + questionId);
                 continue;
             }
 
             QuestPrefabManager question =
-                Instantiate(
-                    prefab,
-                    questionsContainer
-                );
+                Instantiate(prefab, questionsContainer);
 
             currentQuestions.Add(question);
+            Debug.Log("CRIANDO PERGUNTA: " + questionId);
         }
     }
 
