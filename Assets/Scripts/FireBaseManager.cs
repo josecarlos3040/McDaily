@@ -1,12 +1,92 @@
+using System;
+using System.Runtime.InteropServices;
+using UnityEngine;
+
+#if !UNITY_WEBGL || UNITY_EDITOR
 using Firebase;
 using Firebase.Auth;
-using UnityEngine;
+using Firebase.Extensions;
+using Firebase.Firestore;
+#endif
 
 public class FireBaseManager : MonoBehaviour
 {
     public static FireBaseManager Instance;
 
+    // =========================================================
+    // FIREBASE WEB
+    // =========================================================
+
+    [Header("Firebase Web")]
+    [SerializeField] private string apiKey;
+    [SerializeField] private string authDomain;
+    [SerializeField] private string projectId;
+    [SerializeField] private string storageBucket;
+    [SerializeField] private string messagingSenderId;
+    [SerializeField] private string appId;
+
+
+#if !UNITY_WEBGL || UNITY_EDITOR
+
+    // =========================================================
+    // FIREBASE UNITY
+    // =========================================================
+
     private FirebaseAuth auth;
+    private FirebaseFirestore db;
+
+#endif
+
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+
+    // =========================================================
+    // FIREBASE WEBGL
+    // =========================================================
+
+    [DllImport("__Internal")]
+    private static extern void FirebaseWeb_Initialize(
+        string apiKey,
+        string authDomain,
+        string projectId,
+        string storageBucket,
+        string messagingSenderId,
+        string appId
+    );
+
+    [DllImport("__Internal")]
+    private static extern void FirebaseWeb_Register(
+        string username,
+        string email,
+        string password,
+        string gameObjectName
+    );
+
+    [DllImport("__Internal")]
+    private static extern void FirebaseWeb_Login(
+        string email,
+        string password,
+        string gameObjectName,
+        string callbackMethod
+    );
+
+    [DllImport("__Internal")]
+    private static extern void FirebaseWeb_Logout();
+
+#endif
+
+
+    // =========================================================
+    // CALLBACKS
+    // =========================================================
+
+    private Action<bool> loginCallback;
+    private Action<bool> registerCallback;
+
+
+    // =========================================================
+    // AWAKE
+    // =========================================================
 
     private void Awake()
     {
@@ -18,111 +98,359 @@ public class FireBaseManager : MonoBehaviour
         else
         {
             Destroy(gameObject);
+            return;
         }
-    }
 
-    private void Start()
-    {
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+
+        // Inicializa Firebase pelo JavaScript
+        FirebaseWeb_Initialize(
+            apiKey,
+            authDomain,
+            projectId,
+            storageBucket,
+            messagingSenderId,
+            appId
+        );
+
+#else
+
+        // Firebase Unity SDK
         InitializeFirebase();
+
+#endif
     }
 
-    private void CheckUser()
-    {
-        FirebaseUser user = auth.CurrentUser;
 
-        if (user != null)
-        {
-            Debug.Log("Usuário já está logado!");
-            Debug.Log(user.Email);
-        }
-        else
-        {
-            Debug.Log("Nenhum usuário logado.");
-        }
-    }
+#if !UNITY_WEBGL || UNITY_EDITOR
+
+    // =========================================================
+    // FIREBASE UNITY - INITIALIZE
+    // =========================================================
 
     private void InitializeFirebase()
     {
-        FirebaseApp.CheckAndFixDependenciesAsync().ContinueWith(task =>
-        {
-            Firebase.DependencyStatus dependencyStatus = task.Result;
-
-            if (dependencyStatus == Firebase.DependencyStatus.Available)
+        FirebaseApp.CheckAndFixDependenciesAsync()
+            .ContinueWithOnMainThread(task =>
             {
-                auth = FirebaseAuth.DefaultInstance;
+                Firebase.DependencyStatus dependencyStatus =
+                    task.Result;
 
-                Debug.Log("Firebase conectado!");
+                if (dependencyStatus ==
+                    Firebase.DependencyStatus.Available)
+                {
+                    auth = FirebaseAuth.DefaultInstance;
+                    db = FirebaseFirestore.DefaultInstance;
 
-                CheckUser();
+                    Debug.Log("Firebase Unity inicializado!");
+                }
+                else
+                {
+                    Debug.LogError(
+                        "Não foi possível inicializar o Firebase. " +
+                        "Dependências: " + dependencyStatus
+                    );
+                }
+            });
+    }
+
+#endif
+
+
+    // =========================================================
+    // REGISTER
+    // =========================================================
+
+    public void Register(
+        string username,
+        string email,
+        string password,
+        Action<bool> callback = null
+    )
+    {
+#if UNITY_WEBGL && !UNITY_EDITOR
+
+        registerCallback = callback;
+
+        FirebaseWeb_Register(
+            username,
+            email,
+            password,
+            gameObject.name
+        );
+
+#else
+
+        if (auth == null)
+        {
+            Debug.LogError("Firebase ainda não foi inicializado.");
+            callback?.Invoke(false);
+            return;
+        }
+
+        auth.CreateUserWithEmailAndPasswordAsync(
+            email,
+            password
+        )
+        .ContinueWithOnMainThread(task =>
+        {
+            if (task.IsCanceled || task.IsFaulted)
+            {
+                Debug.LogError(
+                    "Erro ao criar usuário: " +
+                    task.Exception
+                );
+
+                callback?.Invoke(false);
+                return;
+            }
+
+            FirebaseUser user = task.Result.User;
+
+            if (user == null)
+            {
+                Debug.LogError(
+                    "Usuário não foi criado."
+                );
+
+                callback?.Invoke(false);
+                return;
+            }
+
+            string userId = user.UserId;
+
+            DocumentReference userDocument =
+                db.Collection("users").Document(userId);
+
+            userDocument.SetAsync(new
+            {
+                username = username,
+                points = 0,
+                streak = 0
+            })
+            .ContinueWithOnMainThread(saveTask =>
+            {
+                if (saveTask.IsCanceled ||
+                    saveTask.IsFaulted)
+                {
+                    Debug.LogError(
+                        "Erro ao salvar usuário: " +
+                        saveTask.Exception
+                    );
+
+                    callback?.Invoke(false);
+                    return;
+                }
+
+                Debug.Log(
+                    "Usuário criado com sucesso!"
+                );
+
+                callback?.Invoke(true);
+            });
+        });
+
+#endif
+    }
+
+
+    // =========================================================
+    // LOGIN
+    // =========================================================
+
+    public void Login(
+        string email,
+        string password,
+        Action<bool> callback = null
+    )
+    {
+#if UNITY_WEBGL && !UNITY_EDITOR
+
+        loginCallback = callback;
+
+        FirebaseWeb_Login(
+            email,
+            password,
+            gameObject.name,
+            "OnWebLoginResult"
+        );
+
+#else
+
+        if (auth == null)
+        {
+            Debug.LogError(
+                "Firebase ainda não foi inicializado."
+            );
+
+            callback?.Invoke(false);
+            return;
+        }
+
+        auth.SignInWithEmailAndPasswordAsync(
+            email,
+            password
+        )
+        .ContinueWithOnMainThread(task =>
+        {
+            if (task.IsCanceled ||
+                task.IsFaulted)
+            {
+                Debug.LogError(
+                    "Erro ao fazer login: " +
+                    task.Exception
+                );
+
+                callback?.Invoke(false);
+                return;
+            }
+
+            FirebaseUser user = task.Result.User;
+
+            if (user != null)
+            {
+                Debug.Log(
+                    "Login realizado com sucesso!"
+                );
+
+                callback?.Invoke(true);
             }
             else
             {
-                Debug.LogError(
-                    "Não foi possível inicializar o Firebase: " +
-                    dependencyStatus
-                );
+                callback?.Invoke(false);
             }
         });
+
+#endif
     }
 
-    public bool IsLoggedIn()
+
+    // =========================================================
+    // WEBGL - LOGIN CALLBACK
+    // =========================================================
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+
+    public void OnWebLoginResult(string result)
     {
-        return auth != null && auth.CurrentUser != null;
+        Debug.Log(
+            "Resultado login WebGL: " + result
+        );
+
+        bool success = result == "success";
+
+        loginCallback?.Invoke(success);
+
+        loginCallback = null;
     }
-    public void Register(string email, string password)
+
+
+    // =========================================================
+    // WEBGL - REGISTER CALLBACK
+    // =========================================================
+
+    public void OnWebRegisterResult(string result)
     {
-        auth.CreateUserWithEmailAndPasswordAsync(email, password)
-            .ContinueWith(task =>
-            {
-                if (task.IsCanceled)
-                {
-                    Debug.LogError("Registro cancelado.");
-                    return;
-                }
+        Debug.Log(
+            "Resultado registro WebGL: " + result
+        );
 
-                if (task.IsFaulted)
-                {
-                    Debug.LogError("Erro no registro: " + task.Exception);
-                    return;
-                }
+        bool success = result == "success";
 
-                FirebaseUser user = task.Result.User;
+        registerCallback?.Invoke(success);
 
-                Debug.Log("Conta criada!");
-                Debug.Log("UID: " + user.UserId);
-                Debug.Log("Email: " + user.Email);
-            });
+        registerCallback = null;
     }
 
-    public void Login(string email, string password)
-    {
-        auth.SignInWithEmailAndPasswordAsync(email, password)
-            .ContinueWith(task =>
-            {
-                if (task.IsCanceled)
-                {
-                    Debug.LogError("Login cancelado.");
-                    return;
-                }
+#endif
 
-                if (task.IsFaulted)
-                {
-                    Debug.LogError("Erro no login: " + task.Exception);
-                    return;
-                }
 
-                FirebaseUser user = task.Result.User;
-
-                Debug.Log("Login realizado!");
-                Debug.Log("Usuário: " + user.Email);
-                Debug.Log("UID: " + user.UserId);
-            });
-    }
+    // =========================================================
+    // LOGOUT
+    // =========================================================
 
     public void Logout()
     {
+#if UNITY_WEBGL && !UNITY_EDITOR
+
+        FirebaseWeb_Logout();
+
+#else
+
+        if (auth == null)
+        {
+            Debug.LogWarning(
+                "Firebase ainda não foi inicializado."
+            );
+
+            return;
+        }
+
         auth.SignOut();
 
-        Debug.Log("Logout realizado.");
+        Debug.Log(
+            "Logout realizado!"
+        );
+
+#endif
+    }
+
+
+    // =========================================================
+    // IS LOGGED IN
+    // =========================================================
+
+    public bool IsLoggedIn()
+    {
+#if UNITY_WEBGL && !UNITY_EDITOR
+
+        // Por enquanto o estado do login WebGL
+        // é controlado pelo Firebase Web.
+        return false;
+
+#else
+
+        return auth != null &&
+               auth.CurrentUser != null;
+
+#endif
+    }
+
+
+    // =========================================================
+    // CURRENT USER ID
+    // =========================================================
+
+    public string GetCurrentUserId()
+    {
+#if UNITY_WEBGL && !UNITY_EDITOR
+
+        return "";
+
+#else
+
+        if (auth == null ||
+            auth.CurrentUser == null)
+        {
+            return "";
+        }
+
+        return auth.CurrentUser.UserId;
+
+#endif
+    }
+
+
+    // =========================================================
+    // DESTROY
+    // =========================================================
+
+    private void OnDestroy()
+    {
+        if (Instance == this)
+        {
+            Instance = null;
+        }
     }
 }

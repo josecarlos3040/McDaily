@@ -215,4 +215,9 @@ public class QuestManager : MonoBehaviour
             }
         );
     }
+
+    public void ReturnHome()
+    {
+        UnityEngine.SceneManagement.SceneManager.LoadScene("InitialScreen");
+    }
 }

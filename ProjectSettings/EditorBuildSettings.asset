@@ -9,6 +9,9 @@ EditorBuildSettings:
     path: Assets/Scenes/Login.unity
     guid: 11f36fd847bd3024fb8c9525437e39d5
   - enabled: 1
+    path: Assets/Scenes/InitialScreen.unity
+    guid: 96969f746defd114a9ac17b819c9de47
+  - enabled: 1
     path: Assets/Scenes/Questionario.unity
     guid: abe70982d3da2d141babdd4e36d890e5
   m_configObjects:
