@@ -549,8 +549,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 85e18edb97777ad4998a9ff23991679c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RewardPrefabManager
-  rewardId: Ocolus
-  rewardName: Ocolus do Grimace
+  rewardId: Oculos
+  rewardName: "\xD3culos do Grimace"
   price: 40
   nameText: {fileID: 4504731204709421161}
   priceText: {fileID: 1356087713092444857}
@@ -900,7 +900,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: -4588807536711942282, guid: 60bfd6878979fb04a935754501b779ce, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 28fda2bba5e59624eb3c339a2957c6d3, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1

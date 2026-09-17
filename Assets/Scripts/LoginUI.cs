@@ -1,43 +1,91 @@
-using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 using UnityEngine.SceneManagement;
+using System.Text.RegularExpressions;
 
 public class LoginUI : MonoBehaviour
 {
-    [SerializeField] GameObject loginButtonScreen;
-    [SerializeField] GameObject registerButtonScreen;
+    [Header("Telas")]
+    [SerializeField] private GameObject loginButtonScreen;
+    [SerializeField] private GameObject registerButtonScreen;
 
-    [SerializeField] Slider loginRegisterSlider;
-
-    [Header("Mensagem")]
-    [SerializeField] TMP_Text messageText;
+    [Header("Slider Login / Cadastro")]
+    [SerializeField] private Slider loginRegisterSlider;
 
     [Header("Login")]
-    public TMP_InputField emailInputLogin;
-    public TMP_InputField passwordInputLogin;
+    [SerializeField] private TMP_InputField emailInputLogin;
+    [SerializeField] private TMP_InputField passwordInputLogin;
 
-    [Header("Register")]
-    public TMP_InputField usernameInputRegister;
-    public TMP_InputField emailInputRegister;
-    public TMP_InputField passwordInputRegister;
-    public TMP_InputField confirmPasswordInputRegister;
+    [Header("Cadastro")]
+    [SerializeField] private TMP_InputField usernameInputRegister;
+    [SerializeField] private TMP_InputField emailInputRegister;
+    [SerializeField] private TMP_InputField passwordInputRegister;
+    [SerializeField] private TMP_InputField confirmPasswordInputRegister;
+
+    [Header("Mensagem")]
+    [SerializeField] private TMP_Text messageText;
 
 
-    // =========================================================
-    // MENSAGEM
-    // =========================================================
-
-    private void ShowMessage(string message)
+    private void Start()
     {
-        messageText.gameObject.SetActive(true);
-        messageText.text = message;
+        ClearMessage();
+
+        if (loginRegisterSlider != null)
+        {
+            loginRegisterSlider.onValueChanged.AddListener(
+                OnLoginRegisterChanged
+            );
+        }
+
+        UpdateLoginRegisterScreen();
     }
 
-    private void HideMessage()
+
+    private void OnLoginRegisterChanged(float value)
     {
-        messageText.text = "";
-        messageText.gameObject.SetActive(false);
+        ClearMessage();
+
+        UpdateLoginRegisterScreen();
+    }
+
+    private void OnDestroy()
+    {
+        if (loginRegisterSlider != null)
+        {
+            loginRegisterSlider.onValueChanged.RemoveListener(
+                OnLoginRegisterChanged
+            );
+        }
+    }
+
+    private void UpdateLoginRegisterScreen()
+    {
+        if (loginRegisterSlider == null)
+        {
+            return;
+        }
+
+        if (loginButtonScreen == null)
+        {
+            return;
+        }
+
+        if (registerButtonScreen == null)
+        {
+            return;
+        }
+
+        if (loginRegisterSlider.value < 0.5f)
+        {
+            loginButtonScreen.SetActive(true);
+            registerButtonScreen.SetActive(false);
+        }
+        else
+        {
+            loginButtonScreen.SetActive(false);
+            registerButtonScreen.SetActive(true);
+        }
     }
 
 
@@ -47,177 +95,236 @@ public class LoginUI : MonoBehaviour
 
     public void Login()
     {
-        string email = emailInputLogin.text;
+        ClearMessage();
+
+        string email = emailInputLogin.text.Trim();
         string password = passwordInputLogin.text;
 
-        ShowMessage("Entrando...");
+
+        if (string.IsNullOrEmpty(email))
+        {
+            ShowMessage("Digite seu email.");
+            return;
+        }
+
+
+        if (!IsValidEmail(email))
+        {
+            ShowMessage("Digite um email válido.");
+            return;
+        }
+
+
+        if (string.IsNullOrEmpty(password))
+        {
+            ShowMessage("Digite sua senha.");
+            return;
+        }
+
+
+        if (FireBaseManager.Instance == null)
+        {
+            ShowMessage("Firebase Manager não encontrado.");
+            return;
+        }
+
 
         FireBaseManager.Instance.Login(
             email,
             password,
-            success =>
-            {
-                if (success)
-                {
-                    // Login deu certo
-                    HideMessage();
-
-                    // Limpa os campos
-                    emailInputLogin.text = "";
-                    passwordInputLogin.text = "";
-
-                    // Vai para a tela inicial
-                    SceneManager.LoadScene("InitialScreen");
-                }
-                else
-                {
-                    // Login deu errado
-                    ShowMessage(
-                        "E-mail ou senha incorretos."
-                    );
-
-                    // Limpa os campos
-                    emailInputLogin.text = "";
-                    passwordInputLogin.text = "";
-                }
-            }
+            OnLoginResult
         );
     }
 
 
-    // =========================================================
-    // REGISTER
-    // =========================================================
+    private void OnLoginResult(bool success, string message)
+    {
+        if (!success)
+        {
+            ShowMessage(message);
+            return;
+        }
 
+        Debug.Log("Login realizado com sucesso.");
+
+        SceneManager.LoadScene("InitialScreen");
+    }
+
+
+    // =========================================================
+    // CADASTRO
+    // =========================================================
+    private bool IsValidEmail(string email)
+    {
+        if (string.IsNullOrEmpty(email))
+        {
+            return false;
+        }
+
+        return Regex.IsMatch(
+            email,
+            @"^[^@\s]+@[^@\s]+\.[^@\s]+$"
+        );
+    }
     public void Register()
     {
-        string username =
-            usernameInputRegister.text;
+        ClearMessage();
 
-        string email =
-            emailInputRegister.text;
-
-        string password =
-            passwordInputRegister.text;
-
-        string confirmPassword =
-            confirmPasswordInputRegister.text;
+        string username = usernameInputRegister.text.Trim();
+        string email = emailInputRegister.text.Trim();
+        string password = passwordInputRegister.text;
+        string confirmation = confirmPasswordInputRegister.text;
 
 
-        // =====================================================
-        // USERNAME
-        // =====================================================
-
-        if (string.IsNullOrWhiteSpace(username))
+        // 1 - USUÁRIO
+        if (string.IsNullOrEmpty(username))
         {
-            ShowMessage(
-                "Digite um nome de usuário."
-            );
-
+            ShowMessage("Digite seu nome de usuário.");
             return;
         }
 
 
-        // =====================================================
-        // EMAIL
-        // =====================================================
-
-        if (string.IsNullOrWhiteSpace(email))
+        // 2 - EMAIL VAZIO
+        if (string.IsNullOrEmpty(email))
         {
-            ShowMessage(
-                "Digite um email."
-            );
-
+            ShowMessage("Digite seu email.");
             return;
         }
 
 
-        // =====================================================
-        // SENHA
-        // =====================================================
-
-        if (string.IsNullOrWhiteSpace(password))
+        // 3 - EMAIL INVÁLIDO
+        if (!IsValidEmail(email))
         {
-            ShowMessage(
-                "Digite uma senha."
-            );
-
+            ShowMessage("Digite um email válido.");
             return;
         }
 
 
-        // =====================================================
-        // CONFIRMAR SENHA
-        // =====================================================
-
-        if (password != confirmPassword)
+        // 4 - SENHA VAZIA
+        if (string.IsNullOrEmpty(password))
         {
-            ShowMessage(
-                "As senhas não são iguais!"
-            );
-
+            ShowMessage("Digite uma senha.");
             return;
         }
 
 
-        // =====================================================
-        // CRIAR CONTA
-        // =====================================================
+        // 5 - SENHA FORTE
+        if (!IsStrongPassword(password))
+        {
+            ShowMessage("Precisa ser uma senha forte.");
+            return;
+        }
 
-        ShowMessage("Criando conta...");
+
+        // 6 - REPETIR SENHA
+        if (string.IsNullOrEmpty(confirmation))
+        {
+            ShowMessage("Repita sua senha.");
+            return;
+        }
+
+
+        // 7 - SENHAS DIFERENTES
+        if (password != confirmation)
+        {
+            ShowMessage("As senhas não coincidem.");
+            return;
+        }
+
+
+        if (FireBaseManager.Instance == null)
+        {
+            ShowMessage("Firebase Manager não encontrado.");
+            return;
+        }
+
 
         FireBaseManager.Instance.Register(
-            username,
             email,
             password,
-            success =>
-            {
-                if (success)
-                {
-                    // Cadastro deu certo
-                    ShowMessage(
-                        "Conta criada com sucesso!"
-                    );
-
-                    // Limpa todos os campos
-                    usernameInputRegister.text = "";
-                    emailInputRegister.text = "";
-                    passwordInputRegister.text = "";
-                    confirmPasswordInputRegister.text = "";
-                }
-                else
-                {
-                    // Cadastro deu errado
-                    ShowMessage(
-                        "Não foi possível criar a conta."
-                    );
-
-                    // Limpa todos os campos
-                    usernameInputRegister.text = "";
-                    emailInputRegister.text = "";
-                    passwordInputRegister.text = "";
-                    confirmPasswordInputRegister.text = "";
-                }
-            }
+            username,
+            OnRegisterResult
         );
+    }
+    private void OnRegisterResult(
+    bool success,
+    string message
+)
+    {
+        if (!success)
+        {
+            ShowMessage(message);
+            return;
+        }
+
+        Debug.Log("Cadastro realizado com sucesso.");
+
+        ShowMessage("Cadastro realizado com sucesso.");
+    }
+
+    // =========================================================
+    // SENHA
+    // =========================================================
+
+    private bool IsStrongPassword(string password)
+    {
+        if (password.Length < 8)
+        {
+            return false;
+        }
+
+        bool hasUpper = false;
+        bool hasLower = false;
+        bool hasNumber = false;
+        bool hasSpecial = false;
+
+        foreach (char character in password)
+        {
+            if (char.IsUpper(character))
+            {
+                hasUpper = true;
+            }
+            else if (char.IsLower(character))
+            {
+                hasLower = true;
+            }
+            else if (char.IsDigit(character))
+            {
+                hasNumber = true;
+            }
+            else
+            {
+                hasSpecial = true;
+            }
+        }
+
+        return hasUpper &&
+               hasLower &&
+               hasNumber &&
+               hasSpecial;
     }
 
 
     // =========================================================
-    // SLIDER
+    // MENSAGEM
     // =========================================================
 
-    private void Update()
+    private void ShowMessage(string message)
     {
-        if (loginRegisterSlider.value == 0)
+        if (messageText != null)
         {
-            loginButtonScreen.SetActive(true);
-            registerButtonScreen.SetActive(false);
+            messageText.text = message;
         }
-        else if (loginRegisterSlider.value == 1)
+
+        Debug.LogWarning(message);
+    }
+
+
+    private void ClearMessage()
+    {
+        if (messageText != null)
         {
-            loginButtonScreen.SetActive(false);
-            registerButtonScreen.SetActive(true);
+            messageText.text = "";
         }
     }
 }

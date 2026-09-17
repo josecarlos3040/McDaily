@@ -1,96 +1,77 @@
 mergeInto(LibraryManager.library, {
 
     // =========================================================
-    // INITIALIZE FIREBASE
+    // INITIALIZE
     // =========================================================
 
-    FirebaseWeb_Initialize: function(
-        apiKeyPtr,
-        authDomainPtr,
-        projectIdPtr,
-        storageBucketPtr,
-        messagingSenderIdPtr,
-        appIdPtr
-    ) {
-        var apiKey = UTF8ToString(apiKeyPtr);
-        var authDomain = UTF8ToString(authDomainPtr);
-        var projectId = UTF8ToString(projectIdPtr);
-        var storageBucket = UTF8ToString(storageBucketPtr);
-        var messagingSenderId = UTF8ToString(messagingSenderIdPtr);
-        var appId = UTF8ToString(appIdPtr);
+    FirebaseWeb_Initialize: function(gameObjectNamePtr) {
 
-        var config = {
-            apiKey: apiKey,
-            authDomain: authDomain,
-            projectId: projectId,
-            storageBucket: storageBucket,
-            messagingSenderId: messagingSenderId,
-            appId: appId
-        };
+        var gameObjectName =
+            UTF8ToString(gameObjectNamePtr);
 
-        if (!firebase.apps.length) {
-            firebase.initializeApp(config);
+        try {
+
+            if (typeof firebase === "undefined") {
+
+                SendMessage(
+                    gameObjectName,
+                    "OnWebInitializeResult",
+                    JSON.stringify({
+                        success: false,
+                        error: "firebase-not-loaded"
+                    })
+                );
+
+                return;
+            }
+
+
+            if (!firebase.apps.length) {
+
+                SendMessage(
+                    gameObjectName,
+                    "OnWebInitializeResult",
+                    JSON.stringify({
+                        success: false,
+                        error: "firebase-not-initialized"
+                    })
+                );
+
+                return;
+            }
+
+
+            console.log(
+                "FirebaseWeb_Initialize: OK"
+            );
+
+
+            SendMessage(
+                gameObjectName,
+                "OnWebInitializeResult",
+                JSON.stringify({
+                    success: true
+                })
+            );
+
         }
+        catch (error) {
 
-        console.log("Firebase Web inicializado!");
-    },
+            console.error(
+                "FirebaseWeb_Initialize:",
+                error
+            );
 
 
-    // =========================================================
-    // REGISTER
-    // =========================================================
-
-    FirebaseWeb_Register: function(
-        usernamePtr,
-        emailPtr,
-        passwordPtr,
-        gameObjectNamePtr
-    ) {
-        var username = UTF8ToString(usernamePtr);
-        var email = UTF8ToString(emailPtr);
-        var password = UTF8ToString(passwordPtr);
-        var gameObjectName = UTF8ToString(gameObjectNamePtr);
-
-        firebase.auth()
-            .createUserWithEmailAndPassword(
-                email,
-                password
-            )
-            .then(function(userCredential) {
-
-                var user = userCredential.user;
-
-                return firebase.firestore()
-                    .collection("users")
-                    .doc(user.uid)
-                    .set({
-                        username: username,
-                        points: 0,
-                        streak: 0
-                    });
-            })
-            .then(function() {
-
-                SendMessage(
-                    gameObjectName,
-                    "OnWebRegisterResult",
-                    "success"
-                );
-
-            })
-            .catch(function(error) {
-
-                console.error(
-                    "Erro no registro:",
-                    error
-                );
-
-                SendMessage(
-                    gameObjectName,
-                    "OnWebRegisterResult",
-                    error.code || "error"
-                );
-            });
+            SendMessage(
+                gameObjectName,
+                "OnWebInitializeResult",
+                JSON.stringify({
+                    success: false,
+                    error: error.message
+                })
+            );
+        }
     },
 
 
@@ -99,47 +80,202 @@ mergeInto(LibraryManager.library, {
     // =========================================================
 
     FirebaseWeb_Login: function(
-        emailPtr,
-        passwordPtr,
         gameObjectNamePtr,
-        callbackMethodPtr
+        emailPtr,
+        passwordPtr
     ) {
-        var email = UTF8ToString(emailPtr);
-        var password = UTF8ToString(passwordPtr);
-        var gameObjectName = UTF8ToString(gameObjectNamePtr);
-        var callbackMethod = UTF8ToString(callbackMethodPtr);
 
-        firebase.auth()
+        var gameObjectName =
+            UTF8ToString(gameObjectNamePtr);
+
+        var email =
+            UTF8ToString(emailPtr);
+
+        var password =
+            UTF8ToString(passwordPtr);
+
+
+        if (
+            typeof firebase ===
+            "undefined"
+        ) {
+
+            SendMessage(
+                gameObjectName,
+                "OnWebLoginResult",
+                JSON.stringify({
+                    success: false,
+                    error: "firebase-not-loaded"
+                })
+            );
+
+            return;
+        }
+
+
+        firebase
+            .auth()
             .signInWithEmailAndPassword(
                 email,
                 password
             )
-            .then(function(userCredential) {
+            .then(
+                function(result) {
 
-                console.log(
-                    "Login realizado!"
-                );
+                    SendMessage(
+                        gameObjectName,
+                        "OnWebLoginResult",
+                        JSON.stringify({
+                            success: true,
+                            uid:
+                                result.user.uid,
+                            email:
+                                result.user.email
+                        })
+                    );
 
-                SendMessage(
-                    gameObjectName,
-                    callbackMethod,
-                    "success"
-                );
+                }
+            )
+            .catch(
+                function(error) {
 
-            })
-            .catch(function(error) {
+                    console.error(
+                        "Firebase login:",
+                        error
+                    );
 
-                console.error(
-                    "Erro no login:",
-                    error
-                );
 
-                SendMessage(
-                    gameObjectName,
-                    callbackMethod,
-                    error.code || "error"
-                );
-            });
+                    SendMessage(
+                        gameObjectName,
+                        "OnWebLoginResult",
+                        JSON.stringify({
+                            success: false,
+                            error:
+                                error.code,
+                            message:
+                                error.message
+                        })
+                    );
+
+                }
+            );
+    },
+
+
+    // =========================================================
+    // REGISTER
+    // =========================================================
+
+    FirebaseWeb_Register: function(
+        gameObjectNamePtr,
+        emailPtr,
+        passwordPtr,
+        usernamePtr
+    ) {
+
+        var gameObjectName =
+            UTF8ToString(
+                gameObjectNamePtr
+            );
+
+
+        var email =
+            UTF8ToString(
+                emailPtr
+            );
+
+
+        var password =
+            UTF8ToString(
+                passwordPtr
+            );
+
+
+        var username =
+            UTF8ToString(
+                usernamePtr
+            );
+
+
+        firebase
+            .auth()
+            .createUserWithEmailAndPassword(
+                email,
+                password
+            )
+            .then(
+                function(result) {
+
+                    var uid =
+                        result.user.uid;
+
+
+                    return firebase
+                        .firestore()
+                        .collection("users")
+                        .doc(uid)
+                        .set({
+                            username:
+                                username,
+
+                            points:
+                                0,
+
+                            streak:
+                                0
+                        })
+                        .then(
+                            function() {
+
+                                SendMessage(
+                                    gameObjectName,
+                                    "OnWebRegisterResult",
+                                    JSON.stringify({
+                                        success:
+                                            true,
+
+                                        uid:
+                                            uid,
+
+                                        email:
+                                            email,
+
+                                        username:
+                                            username
+                                    })
+                                );
+
+                            }
+                        );
+
+                }
+            )
+            .catch(
+                function(error) {
+
+                    console.error(
+                        "Firebase registro:",
+                        error
+                    );
+
+
+                    SendMessage(
+                        gameObjectName,
+                        "OnWebRegisterResult",
+                        JSON.stringify({
+                            success:
+                                false,
+
+                            error:
+                                error.code,
+
+                            message:
+                                error.message
+                        })
+                    );
+
+                }
+            );
     },
 
 
@@ -147,24 +283,53 @@ mergeInto(LibraryManager.library, {
     // LOGOUT
     // =========================================================
 
-    FirebaseWeb_Logout: function() {
+    FirebaseWeb_Logout: function(
+        gameObjectNamePtr
+    ) {
 
-        firebase.auth()
+        var gameObjectName =
+            UTF8ToString(
+                gameObjectNamePtr
+            );
+
+
+        firebase
+            .auth()
             .signOut()
-            .then(function() {
+            .then(
+                function() {
 
-                console.log(
-                    "Logout realizado!"
-                );
+                    SendMessage(
+                        gameObjectName,
+                        "OnWebLogoutResult",
+                        JSON.stringify({
+                            success:
+                                true
+                        })
+                    );
 
-            })
-            .catch(function(error) {
+                }
+            )
+            .catch(
+                function(error) {
 
-                console.error(
-                    "Erro no logout:",
-                    error
-                );
-            });
+                    SendMessage(
+                        gameObjectName,
+                        "OnWebLogoutResult",
+                        JSON.stringify({
+                            success:
+                                false,
+
+                            error:
+                                error.code,
+
+                            message:
+                                error.message
+                        })
+                    );
+
+                }
+            );
     },
 
 
@@ -172,197 +337,258 @@ mergeInto(LibraryManager.library, {
     // GET USER INFO
     // =========================================================
 
-FirebaseWeb_GetUserInfo: function(
-    gameObjectNamePtr
-) {
-    var gameObjectName =
-        UTF8ToString(gameObjectNamePtr);
+    FirebaseWeb_GetUserInfo: function(
+        gameObjectNamePtr
+    ) {
 
-    function sendUserInfo(user) {
-
-        if (!user) {
-
-            console.error(
-                "Nenhum usuário está logado."
+        var gameObjectName =
+            UTF8ToString(
+                gameObjectNamePtr
             );
 
-            return;
-        }
 
-        firebase.firestore()
-            .collection("users")
-            .doc(user.uid)
-            .onSnapshot(
-                function(snapshot) {
+        function sendUserInfo(user) {
 
-                    if (!snapshot.exists) {
+            if (!user) {
 
-                        console.warn(
-                            "Documento do usuário não existe."
+                console.error(
+                    "Nenhum usuário está logado."
+                );
+
+                return;
+            }
+
+
+            firebase
+                .firestore()
+                .collection("users")
+                .doc(user.uid)
+                .onSnapshot(
+
+                    function(snapshot) {
+
+                        if (
+                            !snapshot.exists
+                        ) {
+
+                            console.warn(
+                                "Documento do usuário não existe."
+                            );
+
+                            return;
+                        }
+
+
+                        var data =
+                            snapshot.data();
+
+
+                        var username =
+                            data.username || "";
+
+
+                        var streak =
+                            data.streak || 0;
+
+
+                        var points =
+                            data.points || 0;
+
+
+                        SendMessage(
+                            gameObjectName,
+                            "OnWebUserInfo",
+                            JSON.stringify({
+                                username:
+                                    username,
+
+                                streak:
+                                    streak,
+
+                                points:
+                                    points
+                            })
                         );
 
-                        return;
+                    },
+
+                    function(error) {
+
+                        console.error(
+                            "Erro no listener do usuário:",
+                            error
+                        );
+
                     }
+                );
+        }
 
-                    var data =
-                        snapshot.data();
 
-                    var username =
-                        data.username || "";
+        var currentUser =
+            firebase
+                .auth()
+                .currentUser;
 
-                    var streak =
-                        data.streak || 0;
 
-                    var points =
-                        data.points || 0;
+        if (currentUser) {
 
-                    SendMessage(
-                        gameObjectName,
-                        "OnWebUserInfo",
-                        JSON.stringify({
-                            username: username,
-                            streak: streak,
-                            points: points
-                        })
-                    );
-
-                },
-                function(error) {
-
-                    console.error(
-                        "Erro no listener do usuário:",
-                        error
-                    );
-                }
+            sendUserInfo(
+                currentUser
             );
-    }
 
-    var currentUser =
-        firebase.auth().currentUser;
+        }
+        else {
 
-    if (currentUser) {
+            var unsubscribe =
+                firebase
+                    .auth()
+                    .onAuthStateChanged(
+                        function(user) {
 
-        sendUserInfo(currentUser);
+                            unsubscribe();
 
-    }
-    else {
 
-        var unsubscribe =
-            firebase.auth().onAuthStateChanged(
-                function(user) {
+                            if (user) {
 
-                    unsubscribe();
+                                sendUserInfo(
+                                    user
+                                );
 
-                    if (user) {
-                        sendUserInfo(user);
-                    }
-                }
-            );
-    }
-},
+                            }
+                        }
+                    );
+        }
+    },
+
 
     // =========================================================
     // GET PURCHASED REWARDS
     // =========================================================
 
- FirebaseWeb_GetPurchasedRewards: function(
-    gameObjectNamePtr
-) {
-    var gameObjectName =
-        UTF8ToString(gameObjectNamePtr);
+    FirebaseWeb_GetPurchasedRewards: function(
+        gameObjectNamePtr
+    ) {
 
-    function listenRewards(user) {
-
-        if (!user) {
-
-            console.error(
-                "Nenhum usuário está logado."
+        var gameObjectName =
+            UTF8ToString(
+                gameObjectNamePtr
             );
 
-            SendMessage(
-                gameObjectName,
-                "OnWebPurchasedRewards",
-                JSON.stringify({
-                    rewards: []
-                })
-            );
 
-            return;
-        }
+        function listenRewards(user) {
 
-        firebase.firestore()
-            .collection("users")
-            .doc(user.uid)
-            .onSnapshot(
-                function(snapshot) {
+            if (!user) {
 
-                    if (!snapshot.exists) {
+                SendMessage(
+                    gameObjectName,
+                    "OnWebPurchasedRewards",
+                    JSON.stringify({
+                        rewards: []
+                    })
+                );
+
+                return;
+            }
+
+
+            firebase
+                .firestore()
+                .collection("users")
+                .doc(user.uid)
+                .onSnapshot(
+
+                    function(snapshot) {
+
+                        if (
+                            !snapshot.exists
+                        ) {
+
+                            SendMessage(
+                                gameObjectName,
+                                "OnWebPurchasedRewards",
+                                JSON.stringify({
+                                    rewards:
+                                        []
+                                })
+                            );
+
+                            return;
+                        }
+
+
+                        var data =
+                            snapshot.data();
+
+
+                        var purchasedRewards =
+                            data.purchasedRewards ||
+                            [];
+
 
                         SendMessage(
                             gameObjectName,
                             "OnWebPurchasedRewards",
                             JSON.stringify({
-                                rewards: []
+                                rewards:
+                                    purchasedRewards
                             })
                         );
 
-                        return;
+                    },
+
+                    function(error) {
+
+                        console.error(
+                            "Erro ao buscar recompensas:",
+                            error
+                        );
+
+
+                        SendMessage(
+                            gameObjectName,
+                            "OnWebPurchasedRewards",
+                            JSON.stringify({
+                                rewards:
+                                    []
+                            })
+                        );
+
                     }
+                );
+        }
 
-                    var data =
-                        snapshot.data();
 
-                    var purchasedRewards =
-                        data.purchasedRewards || [];
+        var currentUser =
+            firebase
+                .auth()
+                .currentUser;
 
-                    SendMessage(
-                        gameObjectName,
-                        "OnWebPurchasedRewards",
-                        JSON.stringify({
-                            rewards: purchasedRewards
-                        })
-                    );
 
-                },
-                function(error) {
+        if (currentUser) {
 
-                    console.error(
-                        "Erro no listener das recompensas:",
-                        error
-                    );
-
-                    SendMessage(
-                        gameObjectName,
-                        "OnWebPurchasedRewards",
-                        JSON.stringify({
-                            rewards: []
-                        })
-                    );
-                }
+            listenRewards(
+                currentUser
             );
-    }
 
-    var currentUser =
-        firebase.auth().currentUser;
+        }
+        else {
 
-    if (currentUser) {
+            var unsubscribe =
+                firebase
+                    .auth()
+                    .onAuthStateChanged(
+                        function(user) {
 
-        listenRewards(currentUser);
+                            unsubscribe();
 
-    }
-    else {
+                            listenRewards(
+                                user
+                            );
 
-        var unsubscribe =
-            firebase.auth().onAuthStateChanged(
-                function(user) {
-
-                    unsubscribe();
-
-                    listenRewards(user);
-                }
-            );
-    }
-},
+                        }
+                    );
+        }
+    },
 
 
     // =========================================================
@@ -374,20 +600,26 @@ FirebaseWeb_GetUserInfo: function(
         price,
         gameObjectNamePtr
     ) {
+
         var rewardId =
-            UTF8ToString(rewardIdPtr);
+            UTF8ToString(
+                rewardIdPtr
+            );
+
 
         var gameObjectName =
-            UTF8ToString(gameObjectNamePtr);
+            UTF8ToString(
+                gameObjectNamePtr
+            );
+
 
         var user =
-            firebase.auth().currentUser;
+            firebase
+                .auth()
+                .currentUser;
+
 
         if (!user) {
-
-            console.error(
-                "Nenhum usuário está logado."
-            );
 
             SendMessage(
                 gameObjectName,
@@ -398,92 +630,128 @@ FirebaseWeb_GetUserInfo: function(
             return;
         }
 
+
         var userRef =
-            firebase.firestore()
+            firebase
+                .firestore()
                 .collection("users")
                 .doc(user.uid);
 
-        userRef.get()
-            .then(function(snapshot) {
 
-                if (!snapshot.exists) {
+        userRef
+            .get()
+            .then(
+                function(snapshot) {
+
+                    if (
+                        !snapshot.exists
+                    ) {
+
+                        SendMessage(
+                            gameObjectName,
+                            "OnWebBuyRewardResult",
+                            "user_not_found"
+                        );
+
+                        return null;
+                    }
+
+
+                    var data =
+                        snapshot.data();
+
+
+                    var points =
+                        data.points || 0;
+
+
+                    var purchasedRewards =
+                        data.purchasedRewards ||
+                        [];
+
+
+                    if (
+                        purchasedRewards.includes(
+                            rewardId
+                        )
+                    ) {
+
+                        SendMessage(
+                            gameObjectName,
+                            "OnWebBuyRewardResult",
+                            "already_purchased"
+                        );
+
+                        return null;
+                    }
+
+
+                    if (
+                        points <
+                        price
+                    ) {
+
+                        SendMessage(
+                            gameObjectName,
+                            "OnWebBuyRewardResult",
+                            "not_enough_points"
+                        );
+
+                        return null;
+                    }
+
+
+                    purchasedRewards.push(
+                        rewardId
+                    );
+
+
+                    return userRef.update({
+                        points:
+                            points - price,
+
+                        purchasedRewards:
+                            purchasedRewards
+                    });
+
+                }
+            )
+            .then(
+                function(result) {
+
+                    if (
+                        result === null
+                    ) {
+                        return;
+                    }
+
 
                     SendMessage(
                         gameObjectName,
                         "OnWebBuyRewardResult",
-                        "user_not_found"
+                        "success"
                     );
 
-                    return null;
                 }
+            )
+            .catch(
+                function(error) {
 
-                var data =
-                    snapshot.data();
+                    console.error(
+                        "Erro ao comprar recompensa:",
+                        error
+                    );
 
-                var points =
-                    data.points || 0;
-
-                var purchasedRewards =
-                    data.purchasedRewards || [];
-
-                if (purchasedRewards.includes(rewardId)) {
 
                     SendMessage(
                         gameObjectName,
                         "OnWebBuyRewardResult",
-                        "already_purchased"
+                        error.code ||
+                        "error"
                     );
 
-                    return null;
                 }
-
-                if (points < price) {
-
-                    SendMessage(
-                        gameObjectName,
-                        "OnWebBuyRewardResult",
-                        "not_enough_points"
-                    );
-
-                    return null;
-                }
-
-                var newPoints =
-                    points - price;
-
-                purchasedRewards.push(rewardId);
-
-                return userRef.update({
-                    points: newPoints,
-                    purchasedRewards: purchasedRewards
-                });
-            })
-            .then(function(result) {
-
-                if (result === null) {
-                    return;
-                }
-
-                SendMessage(
-                    gameObjectName,
-                    "OnWebBuyRewardResult",
-                    "success"
-                );
-
-            })
-            .catch(function(error) {
-
-                console.error(
-                    "Erro ao comprar recompensa:",
-                    error
-                );
-
-                SendMessage(
-                    gameObjectName,
-                    "OnWebBuyRewardResult",
-                    error.code || "error"
-                );
-            });
+            );
     },
 
 
@@ -495,14 +763,24 @@ FirebaseWeb_GetUserInfo: function(
         answersJsonPtr,
         gameObjectNamePtr
     ) {
+
         var answersJson =
-            UTF8ToString(answersJsonPtr);
+            UTF8ToString(
+                answersJsonPtr
+            );
+
 
         var gameObjectName =
-            UTF8ToString(gameObjectNamePtr);
+            UTF8ToString(
+                gameObjectNamePtr
+            );
+
 
         var user =
-            firebase.auth().currentUser;
+            firebase
+                .auth()
+                .currentUser;
+
 
         if (!user) {
 
@@ -515,144 +793,223 @@ FirebaseWeb_GetUserInfo: function(
             return;
         }
 
+
         var today =
-            new Date().toISOString().split("T")[0];
+            new Date()
+                .toISOString()
+                .split("T")[0];
+
 
         var userRef =
-            firebase.firestore()
+            firebase
+                .firestore()
                 .collection("users")
                 .doc(user.uid);
 
+
         var questionnaireRef =
-            userRef.collection("questionnaires")
+            userRef
+                .collection("questionnaires")
                 .doc(today);
 
-        userRef.get()
-            .then(function(snapshot) {
 
-                var data =
-                    snapshot.exists
-                        ? snapshot.data()
-                        : {};
+        userRef
+            .get()
+            .then(
+                function(snapshot) {
 
-                var oldStreak =
-                    data.streak || 0;
+                    var data =
+                        snapshot.exists
+                            ? snapshot.data()
+                            : {};
 
-                var lastDate =
-                    data.lastQuestionnaireDate || "";
 
-                var currentStreak = 1;
+                    var oldStreak =
+                        data.streak || 0;
 
-                if (lastDate) {
 
-                    var last =
-                        new Date(lastDate);
+                    var lastDate =
+                        data.lastQuestionnaireDate ||
+                        "";
 
-                    var now =
-                        new Date(today);
 
-                    var difference =
-                        Math.floor(
-                            (now - last) /
-                            (1000 * 60 * 60 * 24)
+                    var currentStreak =
+                        1;
+
+
+                    if (lastDate) {
+
+                        var last =
+                            new Date(
+                                lastDate
+                            );
+
+
+                        var now =
+                            new Date(
+                                today
+                            );
+
+
+                        var difference =
+                            Math.floor(
+                                (now - last) /
+                                (
+                                    1000 *
+                                    60 *
+                                    60 *
+                                    24
+                                )
+                            );
+
+
+                        if (
+                            difference ===
+                            1
+                        ) {
+
+                            currentStreak =
+                                oldStreak +
+                                1;
+
+                        }
+                        else if (
+                            difference ===
+                            0
+                        ) {
+
+                            currentStreak =
+                                oldStreak;
+
+                        }
+                        else {
+
+                            currentStreak =
+                                1;
+
+                        }
+                    }
+
+
+                    var pointsEarned =
+                        Math.min(
+                            20 +
+                            (
+                                currentStreak *
+                                10
+                            ),
+                            100
                         );
 
-                    if (difference === 1) {
 
-                        currentStreak =
-                            oldStreak + 1;
+                    var answers =
+                        {};
+
+
+                    try {
+
+                        var parsed =
+                            JSON.parse(
+                                answersJson
+                            );
+
+
+                        if (
+                            parsed.answers
+                        ) {
+
+                            parsed.answers.forEach(
+                                function(answer) {
+
+                                    answers[
+                                        answer.key
+                                    ] =
+                                        answer.value;
+
+                                }
+                            );
+                        }
 
                     }
-                    else if (difference === 0) {
+                    catch (error) {
 
-                        currentStreak =
-                            oldStreak;
+                        console.error(
+                            "Erro ao ler respostas:",
+                            error
+                        );
 
                     }
-                    else {
 
-                        currentStreak = 1;
-                    }
-                }
 
-                var pointsEarned =
-                    Math.min(
-                        20 +
-                        (currentStreak * 10),
-                        100
-                    );
+                    return questionnaireRef
+                        .set({
+                            answers:
+                                answers,
 
-                var answers = {};
+                            pointsEarned:
+                                pointsEarned,
 
-                try {
+                            createdAt:
+                                firebase
+                                    .firestore
+                                    .FieldValue
+                                    .serverTimestamp()
+                        })
+                        .then(
+                            function() {
 
-                    var parsed =
-                        JSON.parse(answersJson);
+                                return userRef
+                                    .update({
 
-                    if (parsed.answers) {
+                                        points:
+                                            firebase
+                                                .firestore
+                                                .FieldValue
+                                                .increment(
+                                                    pointsEarned
+                                                ),
 
-                        parsed.answers.forEach(
-                            function(answer) {
+                                        streak:
+                                            currentStreak,
 
-                                answers[answer.key] =
-                                    answer.value;
+                                        lastQuestionnaireDate:
+                                            today
+                                    });
+
                             }
                         );
-                    }
 
                 }
-                catch (error) {
+            )
+            .then(
+                function() {
+
+                    SendMessage(
+                        gameObjectName,
+                        "OnWebSaveQuestionnaire",
+                        "success"
+                    );
+
+                }
+            )
+            .catch(
+                function(error) {
 
                     console.error(
-                        "Erro ao ler respostas:",
+                        "Erro ao salvar questionário:",
                         error
                     );
+
+
+                    SendMessage(
+                        gameObjectName,
+                        "OnWebSaveQuestionnaire",
+                        error.code ||
+                        "error"
+                    );
+
                 }
-
-                return questionnaireRef.set({
-                    answers: answers,
-                    pointsEarned: pointsEarned,
-                    createdAt:
-                        firebase.firestore.FieldValue
-                            .serverTimestamp()
-                })
-                .then(function() {
-
-                    return userRef.update({
-
-                        points:
-                            firebase.firestore.FieldValue
-                                .increment(pointsEarned),
-
-                        streak: currentStreak,
-
-                        lastQuestionnaireDate:
-                            today
-                    });
-                });
-            })
-            .then(function() {
-
-                SendMessage(
-                    gameObjectName,
-                    "OnWebSaveQuestionnaire",
-                    "success"
-                );
-
-            })
-            .catch(function(error) {
-
-                console.error(
-                    "Erro ao salvar questionário:",
-                    error
-                );
-
-                SendMessage(
-                    gameObjectName,
-                    "OnWebSaveQuestionnaire",
-                    error.code || "error"
-                );
-            });
+            );
     },
 
 
@@ -663,11 +1020,18 @@ FirebaseWeb_GetUserInfo: function(
     FirebaseWeb_HasAnsweredToday: function(
         gameObjectNamePtr
     ) {
+
         var gameObjectName =
-            UTF8ToString(gameObjectNamePtr);
+            UTF8ToString(
+                gameObjectNamePtr
+            );
+
 
         var user =
-            firebase.auth().currentUser;
+            firebase
+                .auth()
+                .currentUser;
+
 
         if (!user) {
 
@@ -680,39 +1044,50 @@ FirebaseWeb_GetUserInfo: function(
             return;
         }
 
-        var today =
-            new Date().toISOString().split("T")[0];
 
-        firebase.firestore()
+        var today =
+            new Date()
+                .toISOString()
+                .split("T")[0];
+
+
+        firebase
+            .firestore()
             .collection("users")
             .doc(user.uid)
             .collection("questionnaires")
             .doc(today)
             .get()
-            .then(function(snapshot) {
+            .then(
+                function(snapshot) {
 
-                SendMessage(
-                    gameObjectName,
-                    "OnWebHasAnsweredToday",
-                    snapshot.exists
-                        ? "true"
-                        : "false"
-                );
+                    SendMessage(
+                        gameObjectName,
+                        "OnWebHasAnsweredToday",
+                        snapshot.exists
+                            ? "true"
+                            : "false"
+                    );
 
-            })
-            .catch(function(error) {
+                }
+            )
+            .catch(
+                function(error) {
 
-                console.error(
-                    "Erro ao verificar questionário:",
-                    error
-                );
+                    console.error(
+                        "Erro ao verificar questionário:",
+                        error
+                    );
 
-                SendMessage(
-                    gameObjectName,
-                    "OnWebHasAnsweredToday",
-                    "false"
-                );
-            });
+
+                    SendMessage(
+                        gameObjectName,
+                        "OnWebHasAnsweredToday",
+                        "false"
+                    );
+
+                }
+            );
     },
 
 
@@ -723,61 +1098,84 @@ FirebaseWeb_GetUserInfo: function(
     FirebaseWeb_GetDailyQuestions: function(
         gameObjectNamePtr
     ) {
+
         var gameObjectName =
-            UTF8ToString(gameObjectNamePtr);
+            UTF8ToString(
+                gameObjectNamePtr
+            );
+
 
         var today =
-            new Date().toISOString().split("T")[0];
+            new Date()
+                .toISOString()
+                .split("T")[0];
 
-        firebase.firestore()
+
+        firebase
+            .firestore()
             .collection("dailyQuestionnaires")
             .doc(today)
             .get()
-            .then(function(snapshot) {
+            .then(
+                function(snapshot) {
 
-                if (!snapshot.exists) {
+                    if (
+                        !snapshot.exists
+                    ) {
+
+                        SendMessage(
+                            gameObjectName,
+                            "OnWebDailyQuestions",
+                            JSON.stringify({
+                                questions:
+                                    []
+                            })
+                        );
+
+                        return;
+                    }
+
+
+                    var data =
+                        snapshot.data();
+
+
+                    var questions =
+                        data.questions ||
+                        [];
+
 
                     SendMessage(
                         gameObjectName,
                         "OnWebDailyQuestions",
                         JSON.stringify({
-                            questions: []
+                            questions:
+                                questions
                         })
                     );
 
-                    return;
                 }
+            )
+            .catch(
+                function(error) {
 
-                var data =
-                    snapshot.data();
+                    console.error(
+                        "Erro ao buscar perguntas:",
+                        error
+                    );
 
-                var questions =
-                    data.questions || [];
 
-                SendMessage(
-                    gameObjectName,
-                    "OnWebDailyQuestions",
-                    JSON.stringify({
-                        questions: questions
-                    })
-                );
+                    SendMessage(
+                        gameObjectName,
+                        "OnWebDailyQuestions",
+                        JSON.stringify({
+                            questions:
+                                []
+                        })
+                    );
 
-            })
-            .catch(function(error) {
-
-                console.error(
-                    "Erro ao buscar perguntas:",
-                    error
-                );
-
-                SendMessage(
-                    gameObjectName,
-                    "OnWebDailyQuestions",
-                    JSON.stringify({
-                        questions: []
-                    })
-                );
-            });
+                }
+            );
     },
 
 
@@ -789,24 +1187,40 @@ FirebaseWeb_GetUserInfo: function(
         questionsJsonPtr,
         gameObjectNamePtr
     ) {
+
         var questionsJson =
-            UTF8ToString(questionsJsonPtr);
+            UTF8ToString(
+                questionsJsonPtr
+            );
+
 
         var gameObjectName =
-            UTF8ToString(gameObjectNamePtr);
+            UTF8ToString(
+                gameObjectNamePtr
+            );
+
 
         var today =
-            new Date().toISOString().split("T")[0];
+            new Date()
+                .toISOString()
+                .split("T")[0];
 
-        var questions = [];
+
+        var questions =
+            [];
+
 
         try {
 
             var parsed =
-                JSON.parse(questionsJson);
+                JSON.parse(
+                    questionsJson
+                );
+
 
             questions =
-                parsed.questions || [];
+                parsed.questions ||
+                [];
 
         }
         catch (error) {
@@ -815,6 +1229,7 @@ FirebaseWeb_GetUserInfo: function(
                 "Erro ao ler perguntas:",
                 error
             );
+
 
             SendMessage(
                 gameObjectName,
@@ -825,37 +1240,50 @@ FirebaseWeb_GetUserInfo: function(
             return;
         }
 
-        firebase.firestore()
+
+        firebase
+            .firestore()
             .collection("dailyQuestionnaires")
             .doc(today)
             .set({
-                questions: questions,
+                questions:
+                    questions,
+
                 createdAt:
-                    firebase.firestore.FieldValue
+                    firebase
+                        .firestore
+                        .FieldValue
                         .serverTimestamp()
             })
-            .then(function() {
+            .then(
+                function() {
 
-                SendMessage(
-                    gameObjectName,
-                    "OnWebCreateDailyQuestions",
-                    "success"
-                );
+                    SendMessage(
+                        gameObjectName,
+                        "OnWebCreateDailyQuestions",
+                        "success"
+                    );
 
-            })
-            .catch(function(error) {
+                }
+            )
+            .catch(
+                function(error) {
 
-                console.error(
-                    "Erro ao criar perguntas:",
-                    error
-                );
+                    console.error(
+                        "Erro ao criar perguntas:",
+                        error
+                    );
 
-                SendMessage(
-                    gameObjectName,
-                    "OnWebCreateDailyQuestions",
-                    error.code || "error"
-                );
-            });
+
+                    SendMessage(
+                        gameObjectName,
+                        "OnWebCreateDailyQuestions",
+                        error.code ||
+                        "error"
+                    );
+
+                }
+            );
     }
 
 });

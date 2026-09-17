@@ -549,8 +549,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 85e18edb97777ad4998a9ff23991679c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RewardPrefabManager
-  rewardId: Disfarce
-  rewardName: Disfarce do Grimace
+  rewardId: Bone
+  rewardName: Bone do Mac
   price: 60
   nameText: {fileID: 4504731204709421161}
   priceText: {fileID: 1356087713092444857}
@@ -900,7 +900,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 1932697119187389784, guid: ffdf4aa9eb4397746931b3874e7d6415, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 784b1e8268a8e474c832de90073a35b1, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
