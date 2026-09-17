@@ -1710,8 +1710,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: 3 de novembro
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 5302535af1044152a457ed104f1f4b91, type: 2}
-  m_sharedMaterial: {fileID: 2164040, guid: 5302535af1044152a457ed104f1f4b91, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 45ccb44915b95024199ebe46e69b8dfc, type: 2}
+  m_sharedMaterial: {fileID: 6562010644093876181, guid: 45ccb44915b95024199ebe46e69b8dfc, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -1741,7 +1741,7 @@ MonoBehaviour:
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
-  m_fontStyle: 1
+  m_fontStyle: 0
   m_HorizontalAlignment: 1
   m_VerticalAlignment: 512
   m_textAlignment: 65535
@@ -2163,7 +2163,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 1}
   m_AnchorMax: {x: 0.5, y: 1}
-  m_AnchoredPosition: {x: 0, y: -552}
+  m_AnchoredPosition: {x: -196, y: -553}
   m_SizeDelta: {x: 624.9, y: 50}
   m_Pivot: {x: 0.5, y: 1}
 --- !u!114 &1481823354
@@ -2188,8 +2188,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: Pesquisa
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 5302535af1044152a457ed104f1f4b91, type: 2}
-  m_sharedMaterial: {fileID: 2164040, guid: 5302535af1044152a457ed104f1f4b91, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 45ccb44915b95024199ebe46e69b8dfc, type: 2}
+  m_sharedMaterial: {fileID: 6562010644093876181, guid: 45ccb44915b95024199ebe46e69b8dfc, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -2456,8 +2456,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0}
   m_AnchorMax: {x: 0.5, y: 0}
-  m_AnchoredPosition: {x: 4.250002, y: 704}
-  m_SizeDelta: {x: 594.6, y: 113.30005}
+  m_AnchoredPosition: {x: 1.7128, y: 718}
+  m_SizeDelta: {x: 757.2316, y: 185.1378}
   m_Pivot: {x: 0.5, y: 0}
 --- !u!114 &1577668754
 MonoBehaviour:
@@ -2714,10 +2714,10 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 3 de novembro
+  m_text: 3 de Novembro
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 5302535af1044152a457ed104f1f4b91, type: 2}
-  m_sharedMaterial: {fileID: 2164040, guid: 5302535af1044152a457ed104f1f4b91, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 45ccb44915b95024199ebe46e69b8dfc, type: 2}
+  m_sharedMaterial: {fileID: 6562010644093876181, guid: 45ccb44915b95024199ebe46e69b8dfc, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -2751,7 +2751,7 @@ MonoBehaviour:
   m_HorizontalAlignment: 1
   m_VerticalAlignment: 512
   m_textAlignment: 65535
-  m_characterSpacing: 0
+  m_characterSpacing: -9.4
   m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
