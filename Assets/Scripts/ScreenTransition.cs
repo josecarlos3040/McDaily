@@ -1,9 +1,12 @@
 using System.Collections;
 using UnityEngine;
-using UnityEngine.InputSystem;
 using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
-public class CanvasTransition : MonoBehaviour
+public class CanvasTransition : MonoBehaviour,
+    IBeginDragHandler,
+    IDragHandler,
+    IEndDragHandler
 {
     [Header("Screens Container")]
     public RectTransform screensContainer;
@@ -27,96 +30,162 @@ public class CanvasTransition : MonoBehaviour
     [Header("Current Screen")]
     public int currentIndex = 0;
 
+
+    // =====================================================
+    // MENU INFERIOR
+    // =====================================================
+
+    [Header("Menu Inferior")]
+
+    // Bolinha amarela
+    [SerializeField]
+    private RectTransform selectedIndicator;
+
+    // Image filho da bolinha
+    [SerializeField]
+    private Image selectedIndicatorIcon;
+
+    // Posição de cada botão
+    [SerializeField]
+    private RectTransform[] menuButtons;
+
+    // Image do ícone de cada botão
+    [SerializeField]
+    private Sprite[] menuIcons;
+
+
+    // =====================================================
+    // DRAG
+    // =====================================================
+
     private bool dragging;
     private bool transitioning;
 
-    private Vector2 touchStart;
+    private Vector2 dragStartPosition;
+
     private float containerStartX;
+
+    private float currentDragDeltaX;
+
 
     private void Start()
     {
-        SetScreenInstant(currentIndex);
+        SetScreenInstant(
+            currentIndex
+        );
     }
 
-    private void Update()
-    {
-        HandleTouch();
-    }
 
     // =====================================================
-    // TOUCH / SWIPE
+    // COMEÇOU A ARRASTAR
     // =====================================================
 
-    private void HandleTouch()
+    public void OnBeginDrag(
+        PointerEventData eventData
+    )
     {
-        if (Touchscreen.current == null)
-            return;
-
-        if (EventSystem.current == null)
-            return;
-
-        var touch = Touchscreen.current.primaryTouch;
-
-        // =================================================
-        // COMEÇOU O TOQUE
-        // =================================================
-
-        if (touch.press.wasPressedThisFrame)
+        if (transitioning)
         {
-            // Não inicia swipe durante uma animação
-            if (transitioning)
-                return;
-
-            // IMPORTANTE:
-            // Se tocou em um botão ou qualquer outro elemento
-            // da UI, NÃO trata isso como swipe.
-            int touchId =
-                touch.touchId.ReadValue();
-
-            if (EventSystem.current.IsPointerOverGameObject(touchId))
-            {
-                dragging = false;
-                return;
-            }
-
-            touchStart =
-                touch.position.ReadValue();
-
-            containerStartX =
-                screensContainer.anchoredPosition.x;
-
-            dragging = true;
-
             return;
         }
 
-        // =================================================
-        // NÃO ESTÁ ARRASTANDO
-        // =================================================
-
-        if (!dragging)
+        if (screensContainer == null)
+        {
             return;
+        }
 
-        // =================================================
-        // MOVIMENTO
-        // =================================================
 
-        Vector2 currentPosition =
-            touch.position.ReadValue();
+        RectTransform parent =
+            screensContainer.parent
+            as RectTransform;
+
+
+        if (parent == null)
+        {
+            return;
+        }
+
+
+        RectTransformUtility
+            .ScreenPointToLocalPointInRectangle(
+                parent,
+                eventData.position,
+                eventData.pressEventCamera,
+                out dragStartPosition
+            );
+
+
+        containerStartX =
+            screensContainer
+                .anchoredPosition.x;
+
+
+        currentDragDeltaX = 0f;
+
+        dragging = true;
+    }
+
+
+    // =====================================================
+    // ARRASTANDO
+    // =====================================================
+
+    public void OnDrag(
+        PointerEventData eventData
+    )
+    {
+        if (!dragging)
+        {
+            return;
+        }
+
+
+        RectTransform parent =
+            screensContainer.parent
+            as RectTransform;
+
+
+        if (parent == null)
+        {
+            return;
+        }
+
+
+        Vector2 currentPosition;
+
+
+        RectTransformUtility
+            .ScreenPointToLocalPointInRectangle(
+                parent,
+                eventData.position,
+                eventData.pressEventCamera,
+                out currentPosition
+            );
+
 
         float deltaX =
-            currentPosition.x - touchStart.x;
+            currentPosition.x -
+            dragStartPosition.x;
+
+
+        currentDragDeltaX =
+            deltaX;
+
 
         float newX =
-            containerStartX + deltaX;
+            containerStartX +
+            deltaX;
 
-        // Limite da primeira tela
+
         float maxX =
             -screenPositions[0];
 
-        // Limite da última tela
+
         float minX =
-            -screenPositions[screenPositions.Length - 1];
+            -screenPositions[
+                screenPositions.Length - 1
+            ];
+
 
         newX =
             Mathf.Clamp(
@@ -125,136 +194,198 @@ public class CanvasTransition : MonoBehaviour
                 maxX
             );
 
-        screensContainer.anchoredPosition =
+
+        screensContainer
+            .anchoredPosition =
             new Vector2(
                 newX,
-                screensContainer.anchoredPosition.y
+                screensContainer
+                    .anchoredPosition.y
             );
-
-        // =================================================
-        // SOLTOU O TOQUE
-        // =================================================
-
-        if (touch.press.wasReleasedThisFrame)
-        {
-            dragging = false;
-
-            FinishSwipe(deltaX);
-        }
     }
 
+
     // =====================================================
-    // FINALIZA SWIPE
+    // SOLTOU
     // =====================================================
 
-    private void FinishSwipe(float deltaX)
+    public void OnEndDrag(
+        PointerEventData eventData
+    )
     {
-        // Swipe para ESQUERDA
-        if (deltaX < -swipeThreshold)
+        if (!dragging)
         {
-            if (currentIndex < screenPositions.Length - 1)
-            {
-                StartCoroutine(
-                    MoveToScreen(currentIndex + 1)
-                );
-
-                return;
-            }
+            return;
         }
 
-        // Swipe para DIREITA
-        if (deltaX > swipeThreshold)
-        {
-            if (currentIndex > 0)
-            {
-                StartCoroutine(
-                    MoveToScreen(currentIndex - 1)
-                );
 
-                return;
-            }
-        }
-
-        // Swipe pequeno:
-        // volta para a tela atual
-        StartCoroutine(
-            MoveToScreen(currentIndex)
-        );
-    }
-
-    // =====================================================
-    // BOTÕES
-    // =====================================================
-
-    public void GoToScreen(int index)
-    {
-        // Índice inválido
-        if (index < 0 || index >= screenPositions.Length)
-            return;
-
-        // Já está nessa tela
-        if (index == currentIndex)
-            return;
-
-        // Não permite duas animações simultâneas
-        if (transitioning)
-            return;
-
-        // Cancela qualquer drag que esteja acontecendo
         dragging = false;
 
-        StartCoroutine(
-            MoveToScreen(index)
+
+        FinishSwipe(
+            currentDragDeltaX
         );
     }
 
+
     // =====================================================
-    // MOVIMENTO ENTRE TELAS
+    // FINAL DO SWIPE
     // =====================================================
 
-    private IEnumerator MoveToScreen(int index)
+    private void FinishSwipe(
+        float deltaX
+    )
     {
-        // Segurança
-        if (index < 0 || index >= screenPositions.Length)
-            yield break;
+        // Arrastou para esquerda
+        // Vai para próxima tela
+        if (
+            deltaX <
+            -swipeThreshold
+        )
+        {
+            if (
+                currentIndex <
+                screenPositions.Length - 1
+            )
+            {
+                StartCoroutine(
+                    MoveToScreen(
+                        currentIndex + 1
+                    )
+                );
 
-        // Impede outra transição
+                return;
+            }
+        }
+
+
+        // Arrastou para direita
+        // Vai para tela anterior
+        if (
+            deltaX >
+            swipeThreshold
+        )
+        {
+            if (
+                currentIndex > 0
+            )
+            {
+                StartCoroutine(
+                    MoveToScreen(
+                        currentIndex - 1
+                    )
+                );
+
+                return;
+            }
+        }
+
+
+        // Não arrastou o suficiente
+        // Volta para tela atual
+        StartCoroutine(
+            MoveToScreen(
+                currentIndex
+            )
+        );
+    }
+
+
+    // =====================================================
+    // BOTÕES DO MENU
+    // =====================================================
+
+    public void GoToScreen(
+        int index
+    )
+    {
+        if (
+            index < 0 ||
+            index >= screenPositions.Length
+        )
+        {
+            return;
+        }
+
+
+        if (transitioning)
+        {
+            return;
+        }
+
+
+        dragging = false;
+
+
+        StartCoroutine(
+            MoveToScreen(
+                index
+            )
+        );
+    }
+
+
+    // =====================================================
+    // MOVER PARA TELA
+    // =====================================================
+
+    private IEnumerator MoveToScreen(
+        int index
+    )
+    {
+        if (
+            index < 0 ||
+            index >= screenPositions.Length
+        )
+        {
+            yield break;
+        }
+
+
         transitioning = true;
 
-        float startX =
-            screensContainer.anchoredPosition.x;
 
-        // A posição que você passou:
-        //
-        // Tela 0 = 0
-        // Tela 1 = 1518
-        // Tela 2 = 3074
-        // Tela 3 = 4669
-        // Tela 4 = 6255
-        //
-        // O container precisa ir para o negativo.
+        // Já atualiza a bolinha do menu
+        UpdateMenuIndicator(
+            index
+        );
+
+
+        float startX =
+            screensContainer
+                .anchoredPosition.x;
+
 
         float targetX =
             -screenPositions[index];
 
+
         float elapsed = 0f;
 
-        while (elapsed < slideDuration)
+
+        while (
+            elapsed <
+            slideDuration
+        )
         {
-            elapsed += Time.deltaTime;
+            elapsed +=
+                Time.deltaTime;
+
 
             float t =
                 Mathf.Clamp01(
-                    elapsed / slideDuration
+                    elapsed /
+                    slideDuration
                 );
 
-            // Suaviza o movimento
+
             t =
                 Mathf.SmoothStep(
                     0f,
                     1f,
                     t
                 );
+
 
             float x =
                 Mathf.Lerp(
@@ -263,34 +394,45 @@ public class CanvasTransition : MonoBehaviour
                     t
                 );
 
-            screensContainer.anchoredPosition =
+
+            screensContainer
+                .anchoredPosition =
                 new Vector2(
                     x,
-                    screensContainer.anchoredPosition.y
+                    screensContainer
+                        .anchoredPosition.y
                 );
+
 
             yield return null;
         }
 
-        // Garante que termine exatamente na posição
-        screensContainer.anchoredPosition =
+
+        screensContainer
+            .anchoredPosition =
             new Vector2(
                 targetX,
-                screensContainer.anchoredPosition.y
+                screensContainer
+                    .anchoredPosition.y
             );
 
-        // Atualiza a tela atual
-        currentIndex = index;
 
-        // Libera novos inputs
-        transitioning = false;
+        currentIndex =
+            index;
+
+
+        transitioning =
+            false;
     }
+
 
     // =====================================================
     // POSIÇÃO INICIAL
     // =====================================================
 
-    private void SetScreenInstant(int index)
+    private void SetScreenInstant(
+        int index
+    )
     {
         index =
             Mathf.Clamp(
@@ -299,12 +441,72 @@ public class CanvasTransition : MonoBehaviour
                 screenPositions.Length - 1
             );
 
-        currentIndex = index;
 
-        screensContainer.anchoredPosition =
+        currentIndex =
+            index;
+
+
+        screensContainer
+            .anchoredPosition =
             new Vector2(
                 -screenPositions[index],
-                screensContainer.anchoredPosition.y
+                screensContainer
+                    .anchoredPosition.y
             );
+
+
+        UpdateMenuIndicator(
+            index
+        );
+    }
+
+
+    // =====================================================
+    // ATUALIZAR BOLINHA DO MENU
+    // =====================================================
+
+    private void UpdateMenuIndicator(
+        int index
+    )
+    {
+        if (selectedIndicator == null)
+        {
+            return;
+        }
+
+
+        if (
+            menuButtons == null ||
+            index >= menuButtons.Length
+        )
+        {
+            return;
+        }
+
+
+        if (
+            menuButtons[index] == null
+        )
+        {
+            return;
+        }
+
+
+        // Move a bolinha para cima do botão
+        selectedIndicator.position =
+            menuButtons[index].position;
+
+
+        // Troca o ícone dentro da bolinha
+        if (
+            selectedIndicatorIcon != null &&
+            menuIcons != null &&
+            index < menuIcons.Length &&
+            menuIcons[index] != null
+        )
+        {
+            selectedIndicatorIcon.sprite =
+                menuIcons[index];
+        }
     }
 }

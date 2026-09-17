@@ -127,8 +127,10 @@ mergeInto(LibraryManager.library, {
                         "OnWebLoginResult",
                         JSON.stringify({
                             success: true,
+
                             uid:
                                 result.user.uid,
+
                             email:
                                 result.user.email
                         })
@@ -150,8 +152,10 @@ mergeInto(LibraryManager.library, {
                         "OnWebLoginResult",
                         JSON.stringify({
                             success: false,
+
                             error:
                                 error.code,
+
                             message:
                                 error.message
                         })
@@ -462,7 +466,7 @@ mergeInto(LibraryManager.library, {
 
 
     // =========================================================
-    // GET PURCHASED REWARDS
+    // GET PURCHASED REWARDS + PET MOOD
     // =========================================================
 
     FirebaseWeb_GetPurchasedRewards: function(
@@ -483,7 +487,8 @@ mergeInto(LibraryManager.library, {
                     gameObjectName,
                     "OnWebPurchasedRewards",
                     JSON.stringify({
-                        rewards: []
+                        rewards: [],
+                        lastQuestionnaireDate: ""
                     })
                 );
 
@@ -507,8 +512,8 @@ mergeInto(LibraryManager.library, {
                                 gameObjectName,
                                 "OnWebPurchasedRewards",
                                 JSON.stringify({
-                                    rewards:
-                                        []
+                                    rewards: [],
+                                    lastQuestionnaireDate: ""
                                 })
                             );
 
@@ -525,12 +530,21 @@ mergeInto(LibraryManager.library, {
                             [];
 
 
+                        var lastQuestionnaireDate =
+                            data.lastQuestionnaireDate ||
+                            "";
+
+
                         SendMessage(
                             gameObjectName,
                             "OnWebPurchasedRewards",
                             JSON.stringify({
+
                                 rewards:
-                                    purchasedRewards
+                                    purchasedRewards,
+
+                                lastQuestionnaireDate:
+                                    lastQuestionnaireDate
                             })
                         );
 
@@ -548,8 +562,8 @@ mergeInto(LibraryManager.library, {
                             gameObjectName,
                             "OnWebPurchasedRewards",
                             JSON.stringify({
-                                rewards:
-                                    []
+                                rewards: [],
+                                lastQuestionnaireDate: ""
                             })
                         );
 
@@ -580,6 +594,7 @@ mergeInto(LibraryManager.library, {
                         function(user) {
 
                             unsubscribe();
+
 
                             listenRewards(
                                 user
@@ -707,6 +722,7 @@ mergeInto(LibraryManager.library, {
 
 
                     return userRef.update({
+
                         points:
                             points - price,
 
@@ -943,6 +959,7 @@ mergeInto(LibraryManager.library, {
 
                     return questionnaireRef
                         .set({
+
                             answers:
                                 answers,
 
@@ -1149,6 +1166,7 @@ mergeInto(LibraryManager.library, {
                         gameObjectName,
                         "OnWebDailyQuestions",
                         JSON.stringify({
+
                             questions:
                                 questions
                         })
@@ -1246,6 +1264,7 @@ mergeInto(LibraryManager.library, {
             .collection("dailyQuestionnaires")
             .doc(today)
             .set({
+
                 questions:
                     questions,
 

@@ -154,7 +154,7 @@ public class UserInfoDisplay : MonoBehaviour
         if (streakText != null)
         {
             streakText.text =
-                streak + "!!";
+                streak.ToString();
         }
 
         if (pointsText != null)

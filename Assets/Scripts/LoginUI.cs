@@ -3,6 +3,7 @@ using UnityEngine.UI;
 using TMPro;
 using UnityEngine.SceneManagement;
 using System.Text.RegularExpressions;
+using System.Collections.Generic;
 
 public class LoginUI : MonoBehaviour
 {
@@ -42,13 +43,6 @@ public class LoginUI : MonoBehaviour
     }
 
 
-    private void OnLoginRegisterChanged(float value)
-    {
-        ClearMessage();
-
-        UpdateLoginRegisterScreen();
-    }
-
     private void OnDestroy()
     {
         if (loginRegisterSlider != null)
@@ -58,6 +52,19 @@ public class LoginUI : MonoBehaviour
             );
         }
     }
+
+
+    // =========================================================
+    // TROCA LOGIN / CADASTRO
+    // =========================================================
+
+    private void OnLoginRegisterChanged(float value)
+    {
+        ClearMessage();
+
+        UpdateLoginRegisterScreen();
+    }
+
 
     private void UpdateLoginRegisterScreen()
     {
@@ -75,6 +82,7 @@ public class LoginUI : MonoBehaviour
         {
             return;
         }
+
 
         if (loginRegisterSlider.value < 0.5f)
         {
@@ -97,34 +105,53 @@ public class LoginUI : MonoBehaviour
     {
         ClearMessage();
 
-        string email = emailInputLogin.text.Trim();
-        string password = passwordInputLogin.text;
+        string email =
+            emailInputLogin.text.Trim();
+
+        string password =
+            passwordInputLogin.text;
 
 
+        // EMAIL VAZIO
         if (string.IsNullOrEmpty(email))
         {
-            ShowMessage("Digite seu email.");
+            ShowMessage(
+                "Digite seu email."
+            );
+
             return;
         }
 
 
+        // EMAIL INVÁLIDO
         if (!IsValidEmail(email))
         {
-            ShowMessage("Digite um email válido.");
+            ShowMessage(
+                "Digite um email válido."
+            );
+
             return;
         }
 
 
+        // SENHA VAZIA
         if (string.IsNullOrEmpty(password))
         {
-            ShowMessage("Digite sua senha.");
+            ShowMessage(
+                "Digite sua senha."
+            );
+
             return;
         }
 
 
+        // FIREBASE
         if (FireBaseManager.Instance == null)
         {
-            ShowMessage("Firebase Manager não encontrado.");
+            ShowMessage(
+                "Firebase Manager não encontrado."
+            );
+
             return;
         }
 
@@ -137,49 +164,64 @@ public class LoginUI : MonoBehaviour
     }
 
 
-    private void OnLoginResult(bool success, string message)
+    private void OnLoginResult(
+        bool success,
+        string message
+    )
     {
         if (!success)
         {
-            ShowMessage(message);
+            ShowMessage(
+                message
+            );
+
             return;
         }
 
-        Debug.Log("Login realizado com sucesso.");
 
-        SceneManager.LoadScene("InitialScreen");
+        Debug.Log(
+            "Login realizado com sucesso."
+        );
+
+
+        SceneManager.LoadScene(
+            "InitialScreen"
+        );
     }
 
 
     // =========================================================
     // CADASTRO
     // =========================================================
-    private bool IsValidEmail(string email)
-    {
-        if (string.IsNullOrEmpty(email))
-        {
-            return false;
-        }
 
-        return Regex.IsMatch(
-            email,
-            @"^[^@\s]+@[^@\s]+\.[^@\s]+$"
-        );
-    }
     public void Register()
     {
         ClearMessage();
 
-        string username = usernameInputRegister.text.Trim();
-        string email = emailInputRegister.text.Trim();
-        string password = passwordInputRegister.text;
-        string confirmation = confirmPasswordInputRegister.text;
+
+        string username =
+            usernameInputRegister.text.Trim();
+
+
+        string email =
+            emailInputRegister.text.Trim();
+
+
+        string password =
+            passwordInputRegister.text;
+
+
+        string confirmation =
+            confirmPasswordInputRegister.text;
 
 
         // 1 - USUÁRIO
         if (string.IsNullOrEmpty(username))
         {
-            ShowMessage("Digite seu nome de usuário.");
+            ShowMessage(
+                "Digite seu nome de usuário."
+            );
+
             return;
         }
 
@@ -187,7 +229,10 @@ public class LoginUI : MonoBehaviour
         // 2 - EMAIL VAZIO
         if (string.IsNullOrEmpty(email))
         {
-            ShowMessage("Digite seu email.");
+            ShowMessage(
+                "Digite seu email."
+            );
+
             return;
         }
 
@@ -195,7 +240,10 @@ public class LoginUI : MonoBehaviour
         // 3 - EMAIL INVÁLIDO
         if (!IsValidEmail(email))
         {
-            ShowMessage("Digite um email válido.");
+            ShowMessage(
+                "Digite um email válido."
+            );
+
             return;
         }
 
@@ -203,38 +251,74 @@ public class LoginUI : MonoBehaviour
         // 4 - SENHA VAZIA
         if (string.IsNullOrEmpty(password))
         {
-            ShowMessage("Digite uma senha.");
+            ShowMessage(
+                "Digite uma senha."
+            );
+
             return;
         }
 
 
         // 5 - SENHA FORTE
-        if (!IsStrongPassword(password))
+        string passwordError =
+            GetPasswordError(
+                password
+            );
+
+
+        if (
+            !string.IsNullOrEmpty(
+                passwordError
+            )
+        )
         {
-            ShowMessage("Precisa ser uma senha forte.");
+            ShowMessage(
+                passwordError
+            );
+
             return;
         }
 
 
         // 6 - REPETIR SENHA
-        if (string.IsNullOrEmpty(confirmation))
+        if (
+            string.IsNullOrEmpty(
+                confirmation
+            )
+        )
         {
-            ShowMessage("Repita sua senha.");
+            ShowMessage(
+                "Repita sua senha."
+            );
+
             return;
         }
 
 
         // 7 - SENHAS DIFERENTES
-        if (password != confirmation)
+        if (
+            password !=
+            confirmation
+        )
         {
-            ShowMessage("As senhas não coincidem.");
+            ShowMessage(
+                "As senhas não coincidem."
+            );
+
             return;
         }
 
 
-        if (FireBaseManager.Instance == null)
+        // 8 - FIREBASE
+        if (
+            FireBaseManager.Instance ==
+            null
+        )
         {
-            ShowMessage("Firebase Manager não encontrado.");
+            ShowMessage(
+                "Firebase Manager não encontrado."
+            );
+
             return;
         }
 
@@ -246,49 +330,112 @@ public class LoginUI : MonoBehaviour
             OnRegisterResult
         );
     }
+
+
     private void OnRegisterResult(
-    bool success,
-    string message
-)
+        bool success,
+        string message
+    )
     {
         if (!success)
         {
-            ShowMessage(message);
+            ShowMessage(
+                message
+            );
+
             return;
         }
 
-        Debug.Log("Cadastro realizado com sucesso.");
 
-        ShowMessage("Cadastro realizado com sucesso.");
+        Debug.Log(
+            "Cadastro realizado com sucesso."
+        );
+
+
+        ShowMessage(
+            "Cadastro realizado com sucesso."
+        );
     }
 
+
     // =========================================================
-    // SENHA
+    // VALIDAR EMAIL
     // =========================================================
 
-    private bool IsStrongPassword(string password)
+    private bool IsValidEmail(
+        string email
+    )
     {
-        if (password.Length < 8)
+        if (
+            string.IsNullOrEmpty(
+                email
+            )
+        )
         {
             return false;
         }
+
+
+        return Regex.IsMatch(
+            email,
+            @"^[^@\s]+@[^@\s]+\.[^@\s]+$"
+        );
+    }
+
+
+    // =========================================================
+    // VALIDAR SENHA
+    // =========================================================
+
+    private string GetPasswordError(
+        string password
+    )
+    {
+        List<string> missingRequirements =
+            new List<string>();
+
+
+        // 8 CARACTERES
+        if (password.Length < 8)
+        {
+            missingRequirements.Add(
+                "pelo menos 8 caracteres"
+            );
+        }
+
 
         bool hasUpper = false;
         bool hasLower = false;
         bool hasNumber = false;
         bool hasSpecial = false;
 
-        foreach (char character in password)
+
+        foreach (
+            char character
+            in password
+        )
         {
-            if (char.IsUpper(character))
+            if (
+                char.IsUpper(
+                    character
+                )
+            )
             {
                 hasUpper = true;
             }
-            else if (char.IsLower(character))
+            else if (
+                char.IsLower(
+                    character
+                )
+            )
             {
                 hasLower = true;
             }
-            else if (char.IsDigit(character))
+            else if (
+                char.IsDigit(
+                    character
+                )
+            )
             {
                 hasNumber = true;
             }
@@ -298,10 +445,112 @@ public class LoginUI : MonoBehaviour
             }
         }
 
-        return hasUpper &&
-               hasLower &&
-               hasNumber &&
-               hasSpecial;
+
+        // MAIÚSCULA
+        if (!hasUpper)
+        {
+            missingRequirements.Add(
+                "uma letra maiúscula"
+            );
+        }
+
+
+        // MINÚSCULA
+        if (!hasLower)
+        {
+            missingRequirements.Add(
+                "uma letra minúscula"
+            );
+        }
+
+
+        // NÚMERO
+        if (!hasNumber)
+        {
+            missingRequirements.Add(
+                "um número"
+            );
+        }
+
+
+        // CARACTERE ESPECIAL
+        if (!hasSpecial)
+        {
+            missingRequirements.Add(
+                "um caractere especial"
+            );
+        }
+
+
+        // SENHA VÁLIDA
+        if (
+            missingRequirements.Count ==
+            0
+        )
+        {
+            return "";
+        }
+
+
+        // SÓ FALTA UMA COISA
+        if (
+            missingRequirements.Count ==
+            1
+        )
+        {
+            return
+                "Sua senha precisa ter " +
+                missingRequirements[0] +
+                ".";
+        }
+
+
+        // MAIS DE UMA COISA FALTANDO
+        string message =
+            "Sua senha precisa ter ";
+
+
+        for (
+            int i = 0;
+            i <
+            missingRequirements.Count;
+            i++
+        )
+        {
+            bool isLast =
+                i ==
+                missingRequirements.Count - 1;
+
+
+            bool isSecondLast =
+                i ==
+                missingRequirements.Count - 2;
+
+
+            if (isLast)
+            {
+                message +=
+                    missingRequirements[i];
+            }
+            else if (isSecondLast)
+            {
+                message +=
+                    missingRequirements[i] +
+                    " e ";
+            }
+            else
+            {
+                message +=
+                    missingRequirements[i] +
+                    ", ";
+            }
+        }
+
+
+        message += ".";
+
+
+        return message;
     }
 
 
@@ -309,14 +558,20 @@ public class LoginUI : MonoBehaviour
     // MENSAGEM
     // =========================================================
 
-    private void ShowMessage(string message)
+    private void ShowMessage(
+        string message
+    )
     {
         if (messageText != null)
         {
-            messageText.text = message;
+            messageText.text =
+                message;
         }
 
-        Debug.LogWarning(message);
+
+        Debug.LogWarning(
+            message
+        );
     }
 
 
@@ -324,7 +579,8 @@ public class LoginUI : MonoBehaviour
     {
         if (messageText != null)
         {
-            messageText.text = "";
+            messageText.text =
+                "";
         }
     }
 }

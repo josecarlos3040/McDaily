@@ -9,6 +9,9 @@ public class RewardPrefabManager : MonoBehaviour
     public string rewardName;
     public int price;
 
+    [TextArea]
+    public string description;
+
     [Header("UI")]
     public TMP_Text nameText;
     public TMP_Text priceText;
@@ -25,6 +28,7 @@ public class RewardPrefabManager : MonoBehaviour
 
 
     private RewardShopManager shopManager;
+    public bool IsPurchased { get; private set; }
 
 
     // =========================================================
@@ -111,6 +115,8 @@ public class RewardPrefabManager : MonoBehaviour
 
     public void SetPurchased()
     {
+        IsPurchased = true;
+
         buyButton.interactable = false;
 
         if (buyButtonText != null)

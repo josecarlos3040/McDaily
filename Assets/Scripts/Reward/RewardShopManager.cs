@@ -13,6 +13,9 @@ public class RewardShopManager : MonoBehaviour
     public List<RewardPrefabManager> rewards =
         new List<RewardPrefabManager>();
 
+    [Header("Destaque")]
+    [SerializeField] private FeaturedRewardUI featuredRewardUI;
+
     private RewardPrefabManager featuredReward;
 
 
@@ -46,8 +49,14 @@ public class RewardShopManager : MonoBehaviour
     // =========================================================
 
     public void BuyReward(
-        RewardPrefabManager reward)
+        RewardPrefabManager reward
+    )
     {
+        if (reward == null)
+        {
+            return;
+        }
+
         Debug.Log(
             "Tentando comprar: " +
             reward.rewardName
@@ -65,11 +74,23 @@ public class RewardShopManager : MonoBehaviour
                     );
 
                     reward.SetPurchased();
+
+                    // Se o item comprado também for
+                    // o item grande em destaque,
+                    // atualiza o botão dele.
+                    if (
+                        featuredReward == reward &&
+                        featuredRewardUI != null
+                    )
+                    {
+                        featuredRewardUI
+                            .UpdatePurchasedState();
+                    }
                 }
                 else
                 {
                     Debug.LogWarning(
-                        "Não foi possível comprar a recompensa."
+                        "Não foi possível comprar a recompensa." 
                     );
                 }
             }
@@ -82,16 +103,43 @@ public class RewardShopManager : MonoBehaviour
     // =========================================================
 
     public void SetFeaturedReward(
-        RewardPrefabManager reward)
+        RewardPrefabManager reward
+    )
     {
-        if (featuredReward != null)
+        if (reward == null)
         {
-            featuredReward.UpdateFeatured(false);
+            return;
         }
 
+
+        // Remove o destaque do item anterior
+        if (featuredReward != null)
+        {
+            featuredReward.UpdateFeatured(
+                false
+            );
+        }
+
+
+        // Novo item em destaque
         featuredReward = reward;
 
-        featuredReward.UpdateFeatured(true);
+
+        // Liga o indicador do card pequeno
+        featuredReward.UpdateFeatured(
+            true
+        );
+
+
+        // Atualiza o card grande de cima
+        if (featuredRewardUI != null)
+        {
+            featuredRewardUI.ShowReward(
+                featuredReward,
+                this
+            );
+        }
+
 
         Debug.Log(
             "Recompensa em destaque: " +
