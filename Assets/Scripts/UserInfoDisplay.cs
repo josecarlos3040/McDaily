@@ -15,6 +15,8 @@ public class UserInfoDisplay : MonoBehaviour
     public TMP_Text streakText;
     public TMP_Text pointsText;
 
+    public GameObject menuHamb;
+
 #if !UNITY_WEBGL || UNITY_EDITOR
 
     private FirebaseAuth auth;
@@ -175,5 +177,11 @@ public class UserInfoDisplay : MonoBehaviour
         }
 
 #endif
+    }
+
+
+    public void MenuHamb()
+    {
+        menuHamb.SetActive(!menuHamb.activeSelf);
     }
 }

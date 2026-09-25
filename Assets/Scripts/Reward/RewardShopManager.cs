@@ -1,5 +1,7 @@
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class RewardShopManager : MonoBehaviour
 {
@@ -13,11 +15,37 @@ public class RewardShopManager : MonoBehaviour
     public List<RewardPrefabManager> rewards =
         new List<RewardPrefabManager>();
 
-    [Header("Destaque")]
-    [SerializeField] private FeaturedRewardUI featuredRewardUI;
+
+    // =========================================================
+    // DESTAQUE GRANDE DA LOJA
+    // =========================================================
+
+    [Header("Destaque da Loja")]
+    [SerializeField]
+    private FeaturedRewardUI featuredRewardUI;
+
+
+    // =========================================================
+    // DESTAQUE DO MENU
+    // =========================================================
+
+    [Header("Destaque no Menu")]
+    [SerializeField]
+    private TMP_Text menuFeaturedName;
+
+    [SerializeField]
+    private Image menuFeaturedImage;
+
 
     private RewardPrefabManager featuredReward;
 
+    private const string FeaturedRewardKey =
+        "FeaturedRewardId";
+
+
+    // =========================================================
+    // START
+    // =========================================================
 
     private void Start()
     {
@@ -31,7 +59,21 @@ public class RewardShopManager : MonoBehaviour
 
     private void CreateRewards()
     {
-        foreach (RewardPrefabManager reward in rewards)
+        string savedFeaturedId =
+            PlayerPrefs.GetString(
+                FeaturedRewardKey,
+                ""
+            );
+
+
+        RewardPrefabManager rewardToRestore =
+            null;
+
+
+        foreach (
+            RewardPrefabManager reward
+            in rewards
+        )
         {
             RewardPrefabManager item =
                 Instantiate(
@@ -39,28 +81,54 @@ public class RewardShopManager : MonoBehaviour
                     rewardsContainer
                 );
 
-            item.Setup(this);
+
+            item.Setup(
+                this
+            );
+
+
+            // Verifica se esse era o reward em destaque
+            if (
+                !string.IsNullOrEmpty(
+                    savedFeaturedId
+                ) &&
+                item.rewardId ==
+                savedFeaturedId
+            )
+            {
+                rewardToRestore =
+                    item;
+            }
+        }
+
+
+        // Restaura o destaque depois de criar todos
+        if (
+            rewardToRestore !=
+            null
+        )
+        {
+            SetFeaturedReward(
+                rewardToRestore,
+                false
+            );
         }
     }
 
 
     // =========================================================
-    // COMPRAR
+    // COMPRAR RECOMPENSA
     // =========================================================
 
     public void BuyReward(
         RewardPrefabManager reward
     )
     {
-        if (reward == null)
-        {
-            return;
-        }
-
         Debug.Log(
-            "Tentando comprar: " +
-            reward.rewardName
+            "Tentando comprar: "
+            + reward.rewardName
         );
+
 
         firebase.BuyReward(
             reward.rewardId,
@@ -73,24 +141,29 @@ public class RewardShopManager : MonoBehaviour
                         "Compra realizada!"
                     );
 
+
                     reward.SetPurchased();
 
-                    // Se o item comprado também for
-                    // o item grande em destaque,
-                    // atualiza o botão dele.
+
                     if (
-                        featuredReward == reward &&
-                        featuredRewardUI != null
+                        featuredReward ==
+                        reward
                     )
                     {
-                        featuredRewardUI
-                            .UpdatePurchasedState();
+                        if (
+                            featuredRewardUI !=
+                            null
+                        )
+                        {
+                            featuredRewardUI
+                                .UpdatePurchasedState();
+                        }
                     }
                 }
                 else
                 {
                     Debug.LogWarning(
-                        "Não foi possível comprar a recompensa." 
+                        "Não foi possível comprar a recompensa."
                     );
                 }
             }
@@ -99,11 +172,23 @@ public class RewardShopManager : MonoBehaviour
 
 
     // =========================================================
-    // DESTAQUE
+    // DEFINIR DESTAQUE
     // =========================================================
 
     public void SetFeaturedReward(
         RewardPrefabManager reward
+    )
+    {
+        SetFeaturedReward(
+            reward,
+            true
+        );
+    }
+
+
+    private void SetFeaturedReward(
+        RewardPrefabManager reward,
+        bool save
     )
     {
         if (reward == null)
@@ -112,38 +197,145 @@ public class RewardShopManager : MonoBehaviour
         }
 
 
-        // Remove o destaque do item anterior
-        if (featuredReward != null)
+        // Remove destaque anterior
+        if (
+            featuredReward !=
+            null
+        )
         {
-            featuredReward.UpdateFeatured(
-                false
-            );
+            featuredReward
+                .UpdateFeatured(
+                    false
+                );
         }
 
 
-        // Novo item em destaque
-        featuredReward = reward;
+        // Define novo destaque
+        featuredReward =
+            reward;
 
 
-        // Liga o indicador do card pequeno
-        featuredReward.UpdateFeatured(
-            true
-        );
-
-
-        // Atualiza o card grande de cima
-        if (featuredRewardUI != null)
-        {
-            featuredRewardUI.ShowReward(
-                featuredReward,
-                this
+        featuredReward
+            .UpdateFeatured(
+                true
             );
+
+
+        // =====================================================
+        // SALVAR DESTAQUE
+        // =====================================================
+
+        if (save)
+        {
+            PlayerPrefs.SetString(
+                FeaturedRewardKey,
+                reward.rewardId
+            );
+
+            PlayerPrefs.Save();
         }
+
+
+        // =====================================================
+        // DESTAQUE GRANDE DA LOJA
+        // =====================================================
+
+        if (
+            featuredRewardUI !=
+            null
+        )
+        {
+            featuredRewardUI
+                .ShowReward(
+                    featuredReward,
+                    this
+                );
+        }
+
+
+        // =====================================================
+        // MENU
+        // =====================================================
+
+        UpdateMenuFeatured();
 
 
         Debug.Log(
-            "Recompensa em destaque: " +
-            reward.rewardName
+            "Recompensa em destaque: "
+            + reward.rewardName
         );
+    }
+
+
+    // =========================================================
+    // ATUALIZAR MENU
+    // =========================================================
+
+    private void UpdateMenuFeatured()
+    {
+        if (
+            featuredReward ==
+            null
+        )
+        {
+            return;
+        }
+
+
+        // NOME
+        if (
+            menuFeaturedName !=
+            null
+        )
+        {
+            menuFeaturedName.text =
+                featuredReward.rewardName;
+        }
+
+
+        // IMAGEM
+        if (
+            menuFeaturedImage !=
+            null &&
+            featuredReward.rewardImage !=
+            null
+        )
+        {
+            menuFeaturedImage.sprite =
+                featuredReward
+                    .rewardImage
+                    .sprite;
+
+
+            menuFeaturedImage.enabled =
+                true;
+        }
+    }
+
+
+    // =========================================================
+    // PEGAR ID DO DESTAQUE
+    // =========================================================
+
+    public static string GetFeaturedRewardId()
+    {
+        return PlayerPrefs.GetString(
+            FeaturedRewardKey,
+            ""
+        );
+    }
+
+
+    // =========================================================
+    // REMOVER DESTAQUE SALVO
+    // =========================================================
+
+    public static void ClearFeaturedReward()
+    {
+        PlayerPrefs.DeleteKey(
+            FeaturedRewardKey
+        );
+
+        PlayerPrefs.Save();
     }
 }

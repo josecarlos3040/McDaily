@@ -1303,6 +1303,71 @@ mergeInto(LibraryManager.library, {
 
                 }
             );
+    },
+
+    // =========================================================
+    // ADD POINTS
+    // =========================================================
+
+    FirebaseWeb_AddPoints: function(
+        points
+    ) {
+
+        var user =
+            firebase
+                .auth()
+                .currentUser;
+
+
+        if (!user) {
+
+            console.error(
+                "Nenhum usuário logado para adicionar pontos."
+            );
+
+            return;
+        }
+
+
+        var userRef =
+            firebase
+                .firestore()
+                .collection("users")
+                .doc(user.uid);
+
+
+        userRef
+            .update({
+
+                points:
+                    firebase
+                        .firestore
+                        .FieldValue
+                        .increment(
+                            points
+                        )
+
+            })
+            .then(
+                function() {
+
+                    console.log(
+                        "Pontos adicionados: +" +
+                        points
+                    );
+
+                }
+            )
+            .catch(
+                function(error) {
+
+                    console.error(
+                        "Erro ao adicionar pontos:",
+                        error
+                    );
+
+                }
+            );
     }
 
 });
